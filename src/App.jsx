@@ -2159,6 +2159,75 @@ const sortRosterForHome = (players) =>
     (a, b) => rosterPhotoTier(a) - rosterPhotoTier(b) || rosterShuffleKey(a.id) - rosterShuffleKey(b.id)
   );
 
+// DESTAQUES no formato do mockup: 3 cartas em escudo (ouro = mensalista, prata = avulso,
+// bordô = goleiro), com a foto de capa dentro da carta, nota/posição no topo e nome embaixo.
+function FeaturedCards({ players, onViewPlayer }) {
+  const withCover = players.filter((p) => p.cover1 || p.cover2 || p.cover3 || p.cover4 || p.cover5);
+  const listKey = withCover.map((p) => p.id).join(",");
+  const entries = React.useMemo(
+    () =>
+      [...withCover]
+        .sort((a, b) => featuredShuffleKey(a.id) - featuredShuffleKey(b.id))
+        .map((p) => ({ player: p, photo: pickRandomCover(p) })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [listKey]
+  );
+  const pages = [];
+  for (let i = 0; i < entries.length; i += 3) pages.push(entries.slice(i, i + 3));
+  const [page, setPage] = useState(0);
+  useEffect(() => {
+    if (pages.length < 2) return;
+    const t = setTimeout(() => setPage((x) => (x + 1) % pages.length), 5000);
+    return () => clearTimeout(t);
+  }, [page, pages.length]);
+  if (!entries.length) return null;
+  const cur = pages[Math.min(page, pages.length - 1)];
+  return (
+    <div className="fcards-wrap">
+      <div className="fcards" key={page}>
+        {cur.map(({ player: p, photo }) => {
+          const tone = p.isGK ? "g" : isMensalista(p) ? "m" : "a";
+          const label = displayName(p);
+          return (
+            <div
+              key={p.id}
+              className={`fcard fcard-${tone}`}
+              role="button"
+              tabIndex={0}
+              onClick={() => onViewPlayer && onViewPlayer(p)}
+              onKeyDown={(e) => {
+                if ((e.key === "Enter" || e.key === " ") && onViewPlayer) {
+                  e.preventDefault();
+                  onViewPlayer(p);
+                }
+              }}
+            >
+              <div className="fcard-photo">
+                {photo ? (
+                  <img src={photo.url} alt={label} style={{ objectPosition: photo.position }} />
+                ) : (
+                  <span className="fcard-ini">{initials(label)}</span>
+                )}
+                <span className="fcard-shade" />
+              </div>
+              <span className="fcard-r">{p.rating}</span>
+              <span className="fcard-ps">{posCode(p.position)}</span>
+              <span className="fcard-nm">{label}</span>
+            </div>
+          );
+        })}
+      </div>
+      {pages.length > 1 && (
+        <div className="fcards-dots">
+          {pages.map((_, i) => (
+            <button key={i} type="button" className={i === page ? "on" : ""} onClick={() => setPage(i)} aria-label={`Destaques ${i + 1}`} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FeaturedCarousel({ players, onViewPlayer }) {
   // Só entra no carrossel quem já tem foto de capa — sem foto, fica de fora
   // (nada de fallback com iniciais nesse destaque). Ordem aleatória a cada
@@ -9503,7 +9572,7 @@ export default function PeladaApp() {
           {players.some((p) => p.cover1 || p.cover2 || p.cover3 || p.cover4 || p.cover5) && (
             <div className="sec-title"><span><Emo e="⭐" />DESTAQUES</span></div>
           )}
-          <FeaturedCarousel players={players} onViewPlayer={setViewPlayer} />
+          <FeaturedCards players={players} onViewPlayer={setViewPlayer} />
 
           <button className="btn btn-ghost btn-block" onClick={openRulesPage}>
             <Emo e="📖" /> REGRAS DA PELADA 4K
@@ -12020,6 +12089,35 @@ function Styles() {
       .roster-row .roster-edit-link { font-size: 11px; }
       .interest-cta-btn { justify-content: space-between; text-align: left; border-radius: 0; background: var(--surface) !important; box-shadow: none !important; border-left: 6px solid var(--gold) !important; padding: 14px 18px !important; font-size: 19px !important; color: #fff !important; margin-top: 14px; }
       .interest-cta-btn .count-pill { margin-left: auto; }
+
+      /* ===== DESTAQUES: cartas em escudo (mockup) ===== */
+      .fcards-wrap { margin: 4px 0 14px; }
+      .fcards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; justify-items: center; animation: pg-fade .5s ease; }
+      @keyframes pg-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+      .fcard {
+        position: relative; width: 100%; max-width: 150px; aspect-ratio: 116 / 156; container-type: inline-size; cursor: pointer;
+        clip-path: polygon(50% 0, 100% 7%, 100% 87%, 50% 100%, 0 87%, 0 7%);
+        transition: translate .2s cubic-bezier(.2,.8,.2,1), filter .2s ease;
+      }
+      .fcard:hover { translate: 0 -6px; filter: brightness(1.1) drop-shadow(0 8px 10px rgba(0,0,0,.6)); }
+      .fcard:active { translate: 0 0; filter: brightness(.92); transition-duration: .06s; }
+      .fcard-m { background: linear-gradient(160deg,#fff1b8 0%,#e0ae3a 40%,#a8731a 72%,#6b430a 100%); }
+      .fcard-a { background: linear-gradient(160deg,#ffffff 0%,#e4e6ea 42%,#a9adb6 78%,#6d717c 100%); }
+      .fcard-g { background: linear-gradient(160deg,#e0587a 0%,#8a1430 48%,#4a0816 100%); }
+      /* foto dentro da carta, com margem */
+      .fcard-photo { position: absolute; left: 11%; right: 11%; top: 15%; bottom: 17%; overflow: hidden; background: rgba(0,0,0,.28);
+        clip-path: polygon(0 0, 100% 0, 100% 86%, 50% 100%, 0 86%); display: flex; align-items: center; justify-content: center; }
+      .fcard-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .fcard-ini { font-family: 'Anton',sans-serif; font-size: 22cqw; color: rgba(255,255,255,.85); }
+      /* degradê leve embaixo (e no topo) pra dar leitura aos textos */
+      .fcard-shade { position: absolute; inset: 0;
+        background: linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 52%, rgba(0,0,0,.78) 100%); }
+      .fcard-r { position: absolute; left: 17%; top: 19%; font-family: 'Anton',sans-serif; font-size: 20cqw; line-height: 1; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.7); }
+      .fcard-ps { position: absolute; left: 17.5%; top: 36%; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 10cqw; letter-spacing: 1px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+      .fcard-nm { position: absolute; left: 8%; right: 8%; top: 70%; text-align: center; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 14.5cqw; letter-spacing: .8px; text-transform: uppercase; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .fcards-dots { display: flex; gap: 6px; justify-content: center; margin-top: 10px; }
+      .fcards-dots button { width: 8px; height: 4px; border: none; padding: 0; background: var(--border); cursor: pointer; transition: width .25s ease, background .25s ease; }
+      .fcards-dots button.on { width: 18px; background: var(--gold); }
     `}</style>
   );
 }
