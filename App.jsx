@@ -6012,6 +6012,7 @@ export default function PeladaApp() {
     let t = 0;
     const apply = (ref, driftAmp, driftSpeed, pointerFactor, extra = "") => {
       if (!ref.current) return;
+      if (!ref.current.closest(".stadium-bg")) return;
       const idleX = Math.sin(t * driftSpeed) * driftAmp;
       const idleY = Math.cos(t * driftSpeed * 0.7) * driftAmp * 0.6;
       const px = pointerRef.current.x * pointerFactor;
@@ -12606,7 +12607,15 @@ function Styles() {
       .presence-card-sub { font-weight: 400 !important; color: var(--gold) !important; }
       .presence-card-status { font-size: 11.9px; padding: 5px 12px; }
       .presence-card-status-icon { font-size: 9.4px; }
-      .presence-open-banner:has(.pob-dot) .presence-open-banner-title { margin-left: 14px; }
+
+      .presence-page-card { transform: none !important; }
+      .presence-stat-red .presence-stat-icon, .presence-stat-red .presence-stat-num { color: #7d818a !important; }
+      .presence-group-out { background: linear-gradient(90deg,#4f535b,#2c2e33) !important; color: #fff; }
+      .presence-group-out + .presence-card-list, .presence-group-out + ul.presence-list { border-left-color: #4a4d54 !important; }
+      @keyframes pg-spin-slow { to { transform: rotate(360deg); } }
+      @keyframes pg-swing { 0%,100% { transform: rotate(-14deg); } 50% { transform: rotate(14deg); } }
+      .sec-title .emo { animation: pg-spin-slow 9s linear infinite; transform-origin: 50% 50%; }
+      .interest-cta-btn .emo { transform-origin: 50% 8%; animation: pg-swing 2.2s ease-in-out infinite; }
 `}</style>
   );
 }
