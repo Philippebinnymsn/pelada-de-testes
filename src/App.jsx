@@ -726,7 +726,7 @@ function generateDraw(selectedPlayers, numTeams, considerGK, method, rules) {
 /* --------------------------------- UI ----------------------------------- */
 
 function Star({ filled }) {
-  return <span style={{ opacity: filled ? 1 : 0.25 }}>★</span>;
+  return <span style={{ opacity: filled ? 1 : 0.25 }}><Emo e="★" /></span>;
 }
 function InstagramIcon({ size = 16 }) {
   return (
@@ -761,10 +761,10 @@ function MembershipBadge({ player, className = "" }) {
   if (isMensalista(player)) {
     return (
       <span className={`membership-badge membership-badge-mensalista ${className}`}>
-        <span className="membership-badge-icon" aria-hidden="true">🏅</span>
+        <span className="membership-badge-icon" aria-hidden="true"><Emo e="🏅" /></span>
         {isTempMensalista(player) ? (
           <>
-            Membro Mensalista Temporário <span aria-hidden="true">🔄</span>
+            Membro Mensalista Temporário <span aria-hidden="true"><Emo e="🔄" /></span>
           </>
         ) : (
           "Membro Mensalista"
@@ -828,7 +828,7 @@ function PresenceRowCard({
   autoTag,
 }) {
   const name = player ? displayName(player) : guestName;
-  const statusIcon = statusTone === "green" ? "✓" : statusTone === "yellow" ? "🕐" : statusTone === "red" ? "✕" : null;
+  const statusIcon = statusTone === "green" ? emo("✓") : statusTone === "yellow" ? emo("🕐") : statusTone === "red" ? emo("✕") : null;
   return (
     <li className="presence-card-row">
       <div className="presence-card-top">
@@ -1043,7 +1043,7 @@ function FavoriteTeamField({ value, onChange }) {
           </>
         ) : (
           <>
-            <span className="fav-team-other-icon">⚽</span>
+            <span className="fav-team-other-icon"><Emo e="⚽" /></span>
             <span className="fav-team-trigger-placeholder">Escolher time do coração</span>
           </>
         )}
@@ -1074,7 +1074,7 @@ function FavoriteTeamField({ value, onChange }) {
                 className={`fav-team-option ${showCustomInput ? "fav-team-option-active" : ""}`}
                 onClick={() => setShowCustomInput(true)}
               >
-                <span className="fav-team-other-icon">⚽</span>
+                <span className="fav-team-other-icon"><Emo e="⚽" /></span>
                 <span>Outro</span>
               </button>
             </div>
@@ -1084,7 +1084,7 @@ function FavoriteTeamField({ value, onChange }) {
                 {customText.trim() ? (
                   <FavoriteTeamBadge name={customText.trim()} size={36} />
                 ) : (
-                  <span className="fav-team-other-icon">⚽</span>
+                  <span className="fav-team-other-icon"><Emo e="⚽" /></span>
                 )}
                 <input
                   className="input"
@@ -1486,7 +1486,7 @@ function PlayerForm({
         />
 
         <label className="switch-row">
-          <span>🧤 Goleiro</span>
+          <span><Emo e="🧤" /> Goleiro</span>
           <button
             type="button"
             className={`toggle ${isGK ? "toggle-on" : ""}`}
@@ -1539,7 +1539,7 @@ function PlayerForm({
           <option value="mensalista">Mensalista</option>
         </select>
         <p className="field-hint">
-          Mensalista aparece no card com selo 🏅 "Membro Mensalista" e recebe o aviso de
+          Mensalista aparece no card com selo <Emo e="🏅" /> "Membro Mensalista" e recebe o aviso de
           mensalidade todo dia 1º. Avulso aparece só na aba Avulsos da lista de presença e
           recebe o aviso de pagamento avulso ao confirmar presença.
         </p>
@@ -2018,7 +2018,7 @@ function ProfileModal({ player, onClose, onEdit, isAdmin, canEditOwn, phone }) {
             </button>
             {canEdit && (
               <button className="hero-icon-btn" onClick={onEdit} aria-label="Editar">
-                ✎
+                <Emo e="✎" />
               </button>
             )}
           </div>
@@ -2053,7 +2053,7 @@ function ProfileModal({ player, onClose, onEdit, isAdmin, canEditOwn, phone }) {
 
           {isAdmin && phone && (
             <div className="profile-admin-contact">
-              <span className="profile-admin-contact-label">📞 Contato (só admin vê)</span>
+              <span className="profile-admin-contact-label"><Emo e="📞" /> Contato (só admin vê)</span>
               <a href={`tel:${phone.replace(/[^\d+]/g, "")}`} className="profile-admin-contact-value">
                 {phone}
               </a>
@@ -2223,7 +2223,7 @@ function FeaturedCarousel({ players, onViewPlayer }) {
           </div>
         )}
         <span className="featured-card-badge">
-          ⭐ Em destaque
+          <Emo e="⭐" /> Em destaque
           <span className="featured-card-badge-name">{label}</span>
         </span>
       </div>
@@ -2466,7 +2466,7 @@ function StoryCameraModal({ onClose, onCapture }) {
               </div>
             )}
             <button type="button" className="story-camera-close" onClick={handleClose} aria-label="Fechar">
-              ✕
+              <Emo e="✕" />
             </button>
             <div className="story-camera-controls">
               {status === "live" && (
@@ -2667,11 +2667,11 @@ function StoryViewerModal({
               onClick={() => onDelete(currentItem.id)}
               aria-label="Excluir story"
             >
-              🗑️
+              <Emo e="🗑️" />
             </button>
           )}
           <button type="button" className="story-viewer-icon-btn" onClick={onClose} aria-label="Fechar">
-            ✕
+            <Emo e="✕" />
           </button>
         </div>
         <div className="story-viewer-media">
@@ -2697,7 +2697,7 @@ function StoryViewerModal({
         <div className="story-bottom-bar">
           {canSeeViewers ? (
             <button type="button" className="story-viewers-pill" onClick={openViewers}>
-              👁 Ver interações
+              <Emo e="👁" /> Ver interações
             </button>
           ) : (
             <span />
@@ -2712,7 +2712,7 @@ function StoryViewerModal({
                   onClick={() => handleReact(emoji)}
                   aria-label={`Reagir com ${emoji}`}
                 >
-                  {emoji}
+                  {emo(emoji)}
                 </button>
               ))}
               <button
@@ -2721,7 +2721,7 @@ function StoryViewerModal({
                 onClick={handleToggleLike}
                 aria-label="Curtir"
               >
-                {liked ? "❤️" : "🤍"}
+                {liked ? emo("❤️") : emo("🤍")}
               </button>
             </div>
           )}
@@ -2731,7 +2731,7 @@ function StoryViewerModal({
           <div className="story-viewers-panel" onClick={(e) => e.stopPropagation()}>
             <div className="story-viewers-panel-head">
               <span className="story-viewers-panel-title">
-                👁 {viewers ? viewers.length : "…"} visualizaç{viewers && viewers.length === 1 ? "ão" : "ões"}
+                <Emo e="👁" /> {viewers ? viewers.length : "…"} visualizaç{viewers && viewers.length === 1 ? "ão" : "ões"}
               </span>
               <button
                 type="button"
@@ -2739,7 +2739,7 @@ function StoryViewerModal({
                 onClick={() => setShowViewers(false)}
                 aria-label="Fechar lista"
               >
-                ✕
+                <Emo e="✕" />
               </button>
             </div>
             <div className="story-viewers-panel-list">
@@ -2757,8 +2757,8 @@ function StoryViewerModal({
                       <Avatar player={p} shape="round" size={34} />
                       <span className="story-viewer-row-name">{displayName(p)}</span>
                       <span className="story-viewer-row-icons">
-                        {v.liked_at && <span title="Curtiu">❤️</span>}
-                        {v.reaction && <span title="Reagiu">{v.reaction}</span>}
+                        {v.liked_at && <span title="Curtiu"><Emo e="❤️" /></span>}
+                        {v.reaction && <span title="Reagiu">{emo(v.reaction)}</span>}
                       </span>
                     </div>
                   );
@@ -2813,7 +2813,7 @@ function AccountModal({
           <p className="admin-hint">{authUser.email}</p>
 
           {isAdmin && (
-            <p className="admin-status">🔓 Você está logado como administrador.</p>
+            <p className="admin-status"><Emo e="🔓" /> Você está logado como administrador.</p>
           )}
 
           {!isAdmin && myPlayer && (
@@ -2832,7 +2832,7 @@ function AccountModal({
               {pelada && accessBlocked && (
                 <div className="access-blocked-box">
                   <p className="access-blocked-text">
-                    🔒 Mensalidade de {monthKeyLabel(currentMonthKey())} pendente — o acesso à
+                    <Emo e="🔒" /> Mensalidade de {monthKeyLabel(currentMonthKey())} pendente — o acesso à
                     lista fica liberado assim que um administrador confirmar o pagamento.
                   </p>
                   <button className="btn btn-primary btn-block" onClick={onShowPaymentAlert}>
@@ -2844,13 +2844,13 @@ function AccountModal({
                 <div className="membership-interest-box">
                   {myPlayer.membershipInterestAt ? (
                     <p className="field-hint">
-                      ✅ Pedido enviado em{" "}
+                      <Emo e="✅" /> Pedido enviado em{" "}
                       {new Date(myPlayer.membershipInterestAt).toLocaleDateString("pt-BR")} —
                       aguardando aprovação de um administrador.
                     </p>
                   ) : (
                     <button className="btn btn-ghost btn-block" onClick={onExpressInterest}>
-                      🏅 Tenho interesse em ser mensalista
+                      <Emo e="🏅" /> Tenho interesse em ser mensalista
                     </button>
                   )}
                 </div>
@@ -2868,9 +2868,9 @@ function AccountModal({
 
           {onSendSuggestion && (
             <div className="suggestion-form">
-              <label className="field-label">💡 Sugerir melhoria (pro sistema ou pra pelada)</label>
+              <label className="field-label"><Emo e="💡" /> Sugerir melhoria (pro sistema ou pra pelada)</label>
               {suggestionSent ? (
-                <p className="field-hint">Sugestão enviada! Obrigado 🙌</p>
+                <p className="field-hint">Sugestão enviada! Obrigado <Emo e="🙌" /></p>
               ) : (
                 <>
                   <textarea
@@ -3160,7 +3160,7 @@ function SetNewPasswordModal({ onSave, onClose }) {
 // Admin: adicionar manualmente alguém do elenco que avisou "por fora" que
 // vai jogar (sem precisar de login vinculado pra entrar na lista). Busca por
 // nome (igual a busca de membros da home) em vez de rolar uma lista enorme.
-function PresenceAdminAdd({ players, presentIds, onAdd, placeholder = "🔍 Buscar jogador pra incluir na lista…" }) {
+function PresenceAdminAdd({ players, presentIds, onAdd, placeholder = "Buscar jogador pra incluir na lista…" }) {
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
   const available = players.filter((p) => !presentIds.has(p.id));
@@ -3174,7 +3174,7 @@ function PresenceAdminAdd({ players, presentIds, onAdd, placeholder = "🔍 Busc
   return (
     <div className="member-search presence-add-search">
       <div className="member-search-box">
-        <span className="member-search-icon">🔍</span>
+        <span className="member-search-icon"><Emo e="🔍" /></span>
         <input
           className="member-search-input"
           value={query}
@@ -3190,7 +3190,7 @@ function PresenceAdminAdd({ players, presentIds, onAdd, placeholder = "🔍 Busc
             onClick={() => setQuery("")}
             aria-label="Limpar"
           >
-            ✕
+            <Emo e="✕" />
           </button>
         )}
       </div>
@@ -3299,7 +3299,7 @@ function AnnouncementPopup({ announcement, onClose }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal announcement-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="announcement-icon">📢</div>
+        <div className="announcement-icon"><Emo e="📢" /></div>
         {announcement.title && <h2 className="modal-title announcement-title">{announcement.title}</h2>}
         <p className="announcement-message">{announcement.message}</p>
         {announcement.mode === "until_date" && announcement.expiresAt && (
@@ -3333,7 +3333,7 @@ function AdminAnnouncementModal({ current, onPublish, onClear, onClose }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2 className="modal-title">📢 Publicar aviso</h2>
+        <h2 className="modal-title"><Emo e="📢" /> Publicar aviso</h2>
 
         {current && (
           <div className="announcement-current">
@@ -3452,7 +3452,7 @@ function PaymentAlertModal({ kind, pix = PIX_INFO, onAlreadyPaid, onClose }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal payment-alert-modal payment-alert-orange" onClick={(e) => e.stopPropagation()}>
-        <div className="payment-alert-icon">💰</div>
+        <div className="payment-alert-icon"><Emo e="💰" /></div>
         <h2 className="modal-title payment-alert-title">{msg.title}</h2>
         <p className="payment-alert-body">{msg.body}</p>
         {msg.note && <p className="payment-alert-body payment-alert-note">{msg.note}</p>}
@@ -3470,16 +3470,16 @@ function PaymentAlertModal({ kind, pix = PIX_INFO, onAlreadyPaid, onClose }) {
             <span className="payment-alert-amount">{msg.amount}</span>
           </div>
           <button className="btn btn-ghost btn-sm payment-alert-copy" onClick={copyPixKey}>
-            {copied ? "✔ Chave copiada!" : "Copiar chave PIX"}
+            {copied ? emo("✔ Chave copiada!") : "Copiar chave PIX"}
           </button>
         </div>
         <p className="payment-alert-footer">
-          Envie o comprovante para algum administrador!<br />Boa pelada! ⚽
+          Envie o comprovante para algum administrador!<br />Boa pelada! <Emo e="⚽" />
         </p>
         {onAlreadyPaid ? (
           <div className="payment-alert-actions">
             <button className="btn btn-primary btn-block" onClick={onAlreadyPaid}>
-              ✅ JÁ PAGUEI
+              <Emo e="✅" /> JÁ PAGUEI
             </button>
             <button className="btn btn-ghost btn-block" onClick={onClose}>
               Fechar
@@ -3502,7 +3502,7 @@ function AvulsoWaitingModal({ onClose }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal payment-alert-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="payment-alert-icon">⏳</div>
+        <div className="payment-alert-icon"><Emo e="⏳" /></div>
         <h2 className="modal-title payment-alert-title">{AVULSO_WAITING_MESSAGE.title}</h2>
         {AVULSO_WAITING_MESSAGE.lines.map((line, i) => (
           <p key={i} className="payment-alert-body">
@@ -3523,7 +3523,7 @@ function PromotedEarlyModal({ onClose }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal payment-alert-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="payment-alert-icon">🔔</div>
+        <div className="payment-alert-icon"><Emo e="🔔" /></div>
         <h2 className="modal-title payment-alert-title">{AVULSO_PROMOTED_EARLY_MESSAGE.title}</h2>
         {AVULSO_PROMOTED_EARLY_MESSAGE.lines.map((line, i) => (
           <p key={i} className="payment-alert-body">
@@ -3545,7 +3545,7 @@ function WelcomeModal({ playerName, onClose, onReadRules }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal payment-alert-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="payment-alert-icon">⚽</div>
+        <div className="payment-alert-icon"><Emo e="⚽" /></div>
         <h2 className="modal-title payment-alert-title">
           Bem-vindo{playerName ? `, ${playerName}` : ""}!
         </h2>
@@ -3555,10 +3555,10 @@ function WelcomeModal({ playerName, onClose, onReadRules }) {
           disponíveis.
         </p>
         <p className="payment-alert-body">
-          Antes de mais nada, dá uma lida nas regras da pelada. 👇
+          Antes de mais nada, dá uma lida nas regras da pelada. <Emo e="👇" />
         </p>
         <button className="btn btn-primary btn-block" onClick={onReadRules}>
-          📖 Ler as regras
+          <Emo e="📖" /> Ler as regras
         </button>
         <button className="btn btn-ghost btn-block" onClick={onClose}>
           Entendi
@@ -3575,7 +3575,7 @@ function SignupLinkAlertModal({ onClose }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal payment-alert-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="payment-alert-icon">✅</div>
+        <div className="payment-alert-icon"><Emo e="✅" /></div>
         <h2 className="modal-title payment-alert-title">Conta criada!</h2>
         <p className="payment-alert-body">
           Se você faz parte da Pelada 4K, avise um administrador pra ele vincular seu
@@ -3599,7 +3599,7 @@ function LateRejoinModal({ onClose }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal payment-alert-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="payment-alert-icon">⚠️</div>
+        <div className="payment-alert-icon"><Emo e="⚠️" /></div>
         <h2 className="modal-title payment-alert-title">{LATE_REJOIN_MESSAGE.title}</h2>
         {LATE_REJOIN_MESSAGE.lines.map((line, i) => (
           <p key={i} className="payment-alert-body">
@@ -3620,7 +3620,7 @@ function AutoAbsentModal({ onClose, onJoinAvulso }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal payment-alert-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="payment-alert-icon">⏰</div>
+        <div className="payment-alert-icon"><Emo e="⏰" /></div>
         <h2 className="modal-title payment-alert-title">Opa!!!</h2>
         <p className="payment-alert-body">
           O prazo para confirmar presença na lista principal terminou (segunda, 13h) e seu nome foi
@@ -3674,7 +3674,7 @@ function InterestAddBox({ available, onAdd }) {
   if (!open) {
     return (
       <button type="button" className="btn btn-ghost btn-block interest-add-trigger" onClick={() => setOpen(true)}>
-        ➕ Incluir membros na lista de interesse
+        <Emo e="➕" /> Incluir membros na lista de interesse
       </button>
     );
   }
@@ -3689,7 +3689,7 @@ function InterestAddBox({ available, onAdd }) {
       </div>
       <input
         className="input"
-        placeholder="🔍 Buscar…"
+        placeholder="Buscar…"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
@@ -3751,7 +3751,7 @@ function InterestQueueName({ player, info }) {
           </span>
         )}
       </span>
-      {info && <span className="temp-mensalista-tag">🔄 mensalista temporário</span>}
+      {info && <span className="temp-mensalista-tag"><Emo e="🔄" /> mensalista temporário</span>}
     </>
   );
 }
@@ -3760,7 +3760,7 @@ function PublicInterestModal({ list, tempInfo, addedByName, availableToAdd, onAd
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2 className="modal-title">🏅 Interessados em ser mensalista</h2>
+        <h2 className="modal-title"><Emo e="🏅" /> Interessados em ser mensalista</h2>
         {onAdd && <InterestAddBox available={availableToAdd} onAdd={onAdd} />}
         <ul className="presence-list">
           {list.map((p, i) => (
@@ -3812,7 +3812,7 @@ function MembershipInterestModal({
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2 className="modal-title">🏅 Interessados em ser mensalista</h2>
+        <h2 className="modal-title"><Emo e="🏅" /> Interessados em ser mensalista</h2>
         {list.length > 0 && (
           <p className="field-hint">
             Use as setas pra mudar a ordem da fila — quem está mais em cima sobe primeiro pra
@@ -3977,7 +3977,7 @@ function MensalistaControlModal({
         {confirmModal}
         <div className="modal" onClick={(e) => e.stopPropagation()}>
           <h2 className="modal-title">
-            {temporary ? "🔄 Tornar avulso temporário" : "⬇️ Tornar avulso"}
+            {temporary ? emo("🔄 Tornar avulso temporário") : emo("⬇️ Tornar avulso")}
           </h2>
           <p className="field-hint">
             <strong>{displayName(mensalista)}</strong> vai virar avulso. Quem sobe da lista de
@@ -4039,7 +4039,7 @@ function MensalistaControlModal({
         <Avatar player={p} shape="round" size={34} />
         <div className="interest-row-info">
           <span className="presence-name">{displayName(p)}</span>
-          <span className="temp-mensalista-tag">🔄 temporário · no lugar de {replacedNameFor(p)}</span>
+          <span className="temp-mensalista-tag"><Emo e="🔄" /> temporário · no lugar de {replacedNameFor(p)}</span>
           <div className="temp-mensalista-actions">
             <button type="button" className="mens-btn mens-btn-green" onClick={() =>
                 askConfirm(
@@ -4107,7 +4107,7 @@ function MensalistaControlModal({
     <div className="modal-backdrop" onClick={onClose}>
       {confirmModal}
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2 className="modal-title">🎖️ Mensalistas</h2>
+        <h2 className="modal-title"><Emo e="🎖️" /> Mensalistas</h2>
         <p className="admin-hint">
           {lineMensalistas.length} mensalista{lineMensalistas.length === 1 ? "" : "s"} no momento
           {tempCount > 0 && ` (${tempCount} temporário${tempCount === 1 ? "" : "s"})`}
@@ -4175,7 +4175,7 @@ function SuggestionsModal({ suggestions, loading, onDelete, onClose }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2 className="modal-title">💡 Sugestões</h2>
+        <h2 className="modal-title"><Emo e="💡" /> Sugestões</h2>
         <p className="admin-hint">
           Recados que o pessoal manda pelo "Minha conta" — pra melhorar o app ou a pelada.
         </p>
@@ -4227,7 +4227,7 @@ function AdminControlModal({ profiles, adminUserIds, myUserId, onGrant, onRevoke
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2 className="modal-title">👑 Administradores</h2>
+        <h2 className="modal-title"><Emo e="👑" /> Administradores</h2>
         <p className="admin-hint">
           Quem tem acesso de administrador consegue publicar peladas, editar qualquer
           jogador, controlar pagamentos e promover/remover outros administradores.
@@ -4249,7 +4249,7 @@ function AdminControlModal({ profiles, adminUserIds, myUserId, onGrant, onRevoke
                     title={isSelf ? "Você não pode remover seu próprio acesso" : undefined}
                     onClick={() => onRevoke(pr.id)}
                   >
-                    👑 admin
+                    <Emo e="👑" /> admin
                   </button>
                 ) : (
                   <button className="paid-pill paid-pill-pending" onClick={() => onGrant(pr.id)}>
@@ -4351,7 +4351,7 @@ function PaymentControlModal({
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2 className="modal-title">💳 Controle de pagamentos</h2>
+        <h2 className="modal-title"><Emo e="💳" /> Controle de pagamentos</h2>
 
         <div className="payment-tabs">
           <button
@@ -4386,7 +4386,7 @@ function PaymentControlModal({
               <span className="pix-active-name">{activePix.name}</span>
               <span className="pix-active-key">{activePix.key}</span>
               <span className="pix-active-owner">
-                💰 Pagamentos marcados como pago entram no caixa deste PIX (aba Financeiro)
+                <Emo e="💰" /> Pagamentos marcados como pago entram no caixa deste PIX (aba Financeiro)
               </span>
             </div>
 
@@ -4432,7 +4432,7 @@ function PaymentControlModal({
                     <div className="interest-row-info">
                       <span className="presence-name">{a.name}</span>
                       <span className={`interest-row-date ${hasKey ? "" : "pix-missing-key"}`}>
-                        {hasKey ? a.key : "⚠️ falta cadastrar a chave PIX"}
+                        {hasKey ? a.key : emo("⚠️ falta cadastrar a chave PIX")}
                       </span>
                       <div className="temp-mensalista-actions">
                         <button type="button" className="link" disabled={pixSaving} onClick={() => startEditPix(a)}>
@@ -4453,7 +4453,7 @@ function PaymentControlModal({
                       </div>
                     </div>
                     {isActive ? (
-                      <span className="paid-pill paid-pill-paid">✔ ativo</span>
+                      <span className="paid-pill paid-pill-paid"><Emo e="✔" /> ativo</span>
                     ) : (
                       <button
                         className="paid-pill paid-pill-pending"
@@ -4499,7 +4499,7 @@ function PaymentControlModal({
             </p>
 
             <label className="switch-row block-unpaid-row">
-              <span>🔒 Bloquear acesso à lista de quem não pagou</span>
+              <span><Emo e="🔒" /> Bloquear acesso à lista de quem não pagou</span>
               <button
                 type="button"
                 className={`toggle ${blockUnpaidEnabled ? "toggle-on" : ""}`}
@@ -4523,17 +4523,17 @@ function PaymentControlModal({
                     <div className="interest-row-info">
                       <span className="presence-name">{displayName(p)}</span>
                       {isTempMensalista(p) && (
-                        <span className="temp-mensalista-tag">🔄 no lugar de {replacedNameFor(p)}</span>
+                        <span className="temp-mensalista-tag"><Emo e="🔄" /> no lugar de {replacedNameFor(p)}</span>
                       )}
                       {!paid && p.membershipReportedMonth === currentMonthKey() && (
-                        <span className="reported-paid-tag">💬 informou que já pagou</span>
+                        <span className="reported-paid-tag"><Emo e="💬" /> informou que já pagou</span>
                       )}
                     </div>
                     <button
                       className={`paid-pill ${paid ? "paid-pill-paid" : "paid-pill-pending"}`}
                       onClick={() => onToggleMensalistaPaid(p.id, !paid)}
                     >
-                      {paid ? "✔ pago" : "pendente"}
+                      {paid ? emo("✔ pago") : "pendente"}
                     </button>
                   </li>
                 );
@@ -4561,7 +4561,7 @@ function PaymentControlModal({
                           className={`paid-pill ${paid ? "paid-pill-paid" : "paid-pill-pending"}`}
                           onClick={() => onToggleAvulsoPaid(entry.presence.id, !paid)}
                         >
-                          {paid ? "✔ pago" : "pendente"}
+                          {paid ? emo("✔ pago") : "pendente"}
                         </button>
                       </li>
                     );
@@ -4773,7 +4773,7 @@ function FinanceControlModal({
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal finance-modal" onClick={(e) => e.stopPropagation()}>
-        <h2 className="modal-title">💰 Controle financeiro</h2>
+        <h2 className="modal-title"><Emo e="💰" /> Controle financeiro</h2>
 
         {loading ? (
           <p className="admin-hint">Carregando…</p>
@@ -4781,7 +4781,7 @@ function FinanceControlModal({
           <>
             <div className="finance-month-caixa">
               <label className="finance-month-caixa-label" htmlFor="finance-month-caixa-select">
-                📌 Conta do mês
+                <Emo e="📌" /> Conta do mês
               </label>
               <select
                 id="finance-month-caixa-select"
@@ -4831,7 +4831,7 @@ function FinanceControlModal({
               ))}
             </select>
 
-            <p className="presence-group-title">📥 Recebimentos</p>
+            <p className="presence-group-title"><Emo e="📥" /> Recebimentos</p>
             {monthKeys.length === 0 && (
               <p className="empty-hint">Nenhum recebimento nesse caixa ainda.</p>
             )}
@@ -4852,7 +4852,7 @@ function FinanceControlModal({
 
                   {bucket.mensalidades.length > 0 && (
                     <>
-                      <p className="finance-section-title">🏅 Mensalidades</p>
+                      <p className="finance-section-title"><Emo e="🏅" /> Mensalidades</p>
                       <ul className="finance-list">
                         {[...bucket.mensalidades]
                           .sort((a, b) => nameFor(a.player_id).localeCompare(nameFor(b.player_id)))
@@ -4874,7 +4874,7 @@ function FinanceControlModal({
 
                   {peladaIds.length > 0 && (
                     <>
-                      <p className="finance-section-title">🎟️ Avulsos</p>
+                      <p className="finance-section-title"><Emo e="🎟️" /> Avulsos</p>
                       {peladaIds.map((pid) => {
                         const list = bucket.peladas.get(pid);
                         const n = peladaNumberInMonth(pid);
@@ -4917,7 +4917,7 @@ function FinanceControlModal({
             })}
             <p className="finance-subtotal">Total recebido: {formatBRL(viewingIncomeTotal)}</p>
 
-            <p className="presence-group-title">📤 Saídas</p>
+            <p className="presence-group-title"><Emo e="📤" /> Saídas</p>
             <ul className="finance-list">
               {viewingExpenses.map((e) => (
                 <li key={e.id} className="finance-row">
@@ -4963,7 +4963,7 @@ function FinanceControlModal({
             </div>
 
             <div className="finance-final-box finance-final-box-geral">
-              <span>💰 Total geral (todos os caixas)</span>
+              <span><Emo e="💰" /> Total geral (todos os caixas)</span>
               <span className={totalGeral < 0 ? "finance-out" : "finance-in"}>{formatBRL(totalGeral)}</span>
             </div>
           </>
@@ -4984,7 +4984,7 @@ function PresenceHistoryModal({ history, loading, players, onClose, onReopen }) 
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2 className="modal-title">📜 Histórico de presença</h2>
+        <h2 className="modal-title"><Emo e="📜" /> Histórico de presença</h2>
         {loading && <p className="admin-hint">Carregando…</p>}
         {!loading && history.length === 0 && (
           <p className="empty-hint">Nenhuma pelada encerrada ainda.</p>
@@ -5020,7 +5020,7 @@ function PresenceHistoryModal({ history, loading, players, onClose, onReopen }) 
                     {p.location ? ` · ${p.location}` : ""}
                   </span>
                   <span className="history-counts">
-                    ✅ {confirmed.length} · 🔔 {guests.length} · ❌ {absent.length}
+                    <Emo e="✅" /> {confirmed.length} · <Emo e="🔔" /> {guests.length} · <Emo e="❌" /> {absent.length}
                   </span>
                 </summary>
                 {onReopen && (
@@ -5032,7 +5032,7 @@ function PresenceHistoryModal({ history, loading, players, onClose, onReopen }) 
                       onReopen(p);
                     }}
                   >
-                    ↩ Reabrir esta lista
+                    <Emo e="↩" /> Reabrir esta lista
                   </button>
                 )}
                 {gks.length > 0 && (
@@ -5041,7 +5041,7 @@ function PresenceHistoryModal({ history, loading, players, onClose, onReopen }) 
                     <ul className="presence-list">
                       {gks.map((pl) => (
                         <li key={pl.id} className="presence-row">
-                          <span className="presence-num">🥅</span>
+                          <span className="presence-num"><Emo e="🥅" /></span>
                           <span className="presence-name">{displayName(pl)}</span>
                         </li>
                       ))}
@@ -5141,58 +5141,58 @@ function AdminToolbar({
   const items = [
     {
       key: "sorteio",
-      icon: "🎲",
+      icon: emo("🎲"),
       label: "Sorteio de times",
       onClick: onSorteio,
     },
     {
       key: "publish",
-      icon: "📋",
+      icon: emo("📋"),
       label: hasPelada ? "Publicar outra pelada" : "Publicar nova pelada",
       onClick: onPublishPelada,
     },
     {
       key: "publish-extra",
-      icon: "⚡",
+      icon: emo("⚡"),
       label: hasPeladaExtra ? "Outra pelada extra" : "Publicar pelada extra",
       onClick: onPublishPeladaExtra,
     },
     hasPeladaExtra && {
       key: "delete-extra",
-      icon: "🗑️",
+      icon: emo("🗑️"),
       label: "Excluir extra",
       onClick: onDeletePeladaExtra,
       danger: true,
     },
-    { key: "announcement", icon: "📢", label: "Aviso", onClick: onAnnouncement },
-    { key: "history", icon: "📜", label: "Histórico", onClick: onHistory },
+    { key: "announcement", icon: emo("📢"), label: "Aviso", onClick: onAnnouncement },
+    { key: "history", icon: emo("📜"), label: "Histórico", onClick: onHistory },
     {
       key: "interest",
-      icon: "🏅",
+      icon: emo("🏅"),
       label: "Interessados",
       onClick: onInterestList,
       count: interestCount,
     },
     {
       key: "mensalistas",
-      icon: "🎖️",
+      icon: emo("🎖️"),
       label: "Mensalistas",
       onClick: onMensalistaControl,
       count: mensalistaCount,
     },
-    { key: "payments", icon: "💳", label: "Pagamentos", onClick: onPaymentControl },
-    { key: "finance", icon: "💰", label: "Financeiro", onClick: onFinance },
+    { key: "payments", icon: emo("💳"), label: "Pagamentos", onClick: onPaymentControl },
+    { key: "finance", icon: emo("💰"), label: "Financeiro", onClick: onFinance },
     {
       key: "suggestions",
-      icon: "💡",
+      icon: emo("💡"),
       label: "Sugestões",
       onClick: onSuggestions,
       count: suggestionsCount,
     },
-    { key: "admins", icon: "👑", label: "Administradores", onClick: onAdminControl },
+    { key: "admins", icon: emo("👑"), label: "Administradores", onClick: onAdminControl },
     hasPelada && {
       key: "delete",
-      icon: "🗑️",
+      icon: emo("🗑️"),
       label: "Excluir lista",
       onClick: onDeletePelada,
       danger: true,
@@ -5206,7 +5206,7 @@ function AdminToolbar({
         className={`admin-menu-trigger ${open ? "is-open" : ""}`}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="admin-menu-trigger-icon">⚽</span>
+        <span className="admin-menu-trigger-icon"><Emo e="⚽" /></span>
         MENU
         <span className="admin-menu-trigger-caret">{open ? "▲" : "▼"}</span>
       </button>
@@ -5231,6 +5231,108 @@ function AdminToolbar({
       )}
     </div>
   );
+}
+
+// ===== Ícones desenhados (no lugar de emoji) — estilo do layout FIFA/PES =====
+const EMO_SVG = {
+  ball: <><circle cx="12" cy="12" r="9" /><path d="M12 8.2l3.4 2.5-1.3 4h-4.2l-1.3-4z" /><path d="M12 8.2V3.2M15.4 10.7l4.7-1.5M14.1 14.7l2.9 4M9.9 14.7l-2.9 4M8.6 10.7L3.9 9.2" /></>,
+  check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
+  checkc: <><circle cx="12" cy="12" r="9" /><path d="M8 12.3l2.8 2.8 5.5-5.6" /></>,
+  x: <path d="M6 6l12 12M18 6L6 18" />,
+  xc: <><circle cx="12" cy="12" r="9" /><path d="M9 9l6 6M15 9l-6 6" /></>,
+  glove: <><path d="M7 13V6.5a1.5 1.5 0 0 1 3 0V11" /><path d="M10 11V4.5a1.5 1.5 0 0 1 3 0V11" /><path d="M13 11V5.5a1.5 1.5 0 0 1 3 0V12" /><path d="M16 12V8.5a1.5 1.5 0 0 1 3 0V15c0 4-2.6 6.5-6.5 6.5S7 19 7 15.5L4.6 12.6a1.5 1.5 0 0 1 2.3-1.9L7 11" /><path d="M8 18h8" /></>,
+  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+  hourglass: <><path d="M6.5 3.5h11M6.5 20.5h11" /><path d="M7.5 3.5c0 4 3 5.5 4.5 8.5-1.5 3-4.5 4.5-4.5 8.5M16.5 3.5c0 4-3 5.5-4.5 8.5 1.5 3 4.5 4.5 4.5 8.5" /></>,
+  refresh: <><path d="M20 11a8 8 0 0 0-14.5-4M4 4v4h4" /><path d="M4 13a8 8 0 0 0 14.5 4M20 20v-4h-4" /></>,
+  medal: <><circle cx="12" cy="15" r="5.5" /><path d="M8.2 3.5L10.6 10M15.8 3.5L13.4 10" /><path d="M12 12.6l.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3z" /></>,
+  coin: <><circle cx="12" cy="12" r="9" /><path d="M14.6 9.3c-.6-.8-1.5-1.3-2.6-1.3-1.4 0-2.5.8-2.5 1.9 0 2.7 5.2 1.3 5.2 4 0 1.1-1.1 2-2.7 2-1.1 0-2.1-.5-2.7-1.3M12 6v2M12 16v2" /></>,
+  bell: <><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z" /><path d="M10 20.5a2 2 0 0 0 4 0" /></>,
+  clip: <><rect x="5" y="4.5" width="14" height="17" rx="2" /><path d="M9 4.5v-1h6v1M8.5 10h7M8.5 14h7M8.5 17.5h4" /></>,
+  search: <><circle cx="10.5" cy="10.5" r="6.5" /><path d="M15.5 15.5L21 21" /></>,
+  dice: <><rect x="4" y="4" width="16" height="16" rx="3" /><circle cx="9" cy="9" r="1" fill="currentColor" /><circle cx="15" cy="9" r="1" fill="currentColor" /><circle cx="12" cy="12" r="1" fill="currentColor" /><circle cx="9" cy="15" r="1" fill="currentColor" /><circle cx="15" cy="15" r="1" fill="currentColor" /></>,
+  warn: <><path d="M12 3.5l9.5 16.5h-19z" /><path d="M12 10v4.5M12 17.3v.2" /></>,
+  crown: <path d="M3.5 18.5l-1-11 5 4.5 4.5-7 4.5 7 5-4.5-1 11z" />,
+  together: <><circle cx="9" cy="12" r="5" /><circle cx="15" cy="12" r="5" /></>,
+  pin: <><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z" /><circle cx="12" cy="10" r="2.3" /></>,
+  book: <path d="M4 5.5A2 2 0 0 1 6 4h6v15H6a2 2 0 0 0-2 1.5zM20 5.5A2 2 0 0 0 18 4h-6v15h6a2 2 0 0 1 2 1.5z" />,
+  doc: <><path d="M6 3.5h9l3.5 3.5v13.5H6z" /><path d="M14.5 3.5V7.5h4M9 12h6M9 15.5h6" /></>,
+  card: <><rect x="3" y="5.5" width="18" height="13" rx="2" /><path d="M3 10h18M7 15h4" /></>,
+  up: <path d="M12 19V5M6 11l6-6 6 6" />,
+  down: <path d="M12 5v14M6 13l6 6 6-6" />,
+  share: <><circle cx="6" cy="12" r="2.5" /><circle cx="18" cy="6" r="2.5" /><circle cx="18" cy="18" r="2.5" /><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6" /></>,
+  ban: <><circle cx="12" cy="12" r="9" /><path d="M5.6 5.6l12.8 12.8" /></>,
+  cal: <><rect x="3.5" y="5" width="17" height="15.5" rx="2" /><path d="M3.5 10h17M8 3v4M16 3v4" /></>,
+  bolt: <path d="M13 2.5L4.5 13.5h6l-1 8 9-11.5h-6z" />,
+  tv: <><rect x="3" y="6.5" width="18" height="12.5" rx="2" /><path d="M8.5 3l3.5 3.5L15.5 3" /></>,
+  camera: <><path d="M4 8h3l1.5-2.5h7L17 8h3v11H4z" /><circle cx="12" cy="13.5" r="3.5" /></>,
+  video: <><rect x="3" y="6.5" width="12.5" height="11" rx="2" /><path d="M15.5 10.5l5.5-3v9l-5.5-3z" /></>,
+  image: <><rect x="3.5" y="4.5" width="17" height="15" rx="2" /><circle cx="9" cy="9.5" r="1.6" /><path d="M3.5 17l5-5 4 4 3-3 5 5" /></>,
+  user: <><circle cx="12" cy="8" r="4" /><path d="M4.5 20c.8-4 3.8-6 7.5-6s6.7 2 7.5 6" /></>,
+  gear: <><circle cx="12" cy="12" r="3.2" /><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1" /></>,
+  plus: <path d="M12 5v14M5 12h14" />,
+  chat: <path d="M4 5.5h16v11H10l-4.5 4v-4H4z" />,
+  inbox: <path d="M12 4v10M7.5 10l4.5 4.5 4.5-4.5M5 19h14" />,
+  outbox: <path d="M12 15V5M7.5 9L12 4.5 16.5 9M5 19h14" />,
+  ticket: <><path d="M3 8.5V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.5a2.5 2.5 0 0 0 0 5V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-4.5a2.5 2.5 0 0 0 0-5z" /><path d="M14.5 5v2M14.5 11v2M14.5 17v2" /></>,
+  scale: <><path d="M12 4v16M6 20h12M5 7h14" /><path d="M5 7l-2.5 7a3 3 0 0 0 5 0zM19 7l-2.5 7a3 3 0 0 0 5 0z" /></>,
+  undo: <path d="M9 6.5L4.5 11 9 15.5M5 11h9a5 5 0 0 1 0 10h-3" />,
+  heart: <path d="M12 21s-8.5-5-8.5-11A4.8 4.8 0 0 1 12 7.2 4.8 4.8 0 0 1 20.5 10c0 6-8.5 11-8.5 11z" />,
+  laugh: <><circle cx="12" cy="12" r="9" /><path d="M8.3 9.3h.01M15.7 9.3h.01" /><path d="M7.8 13.5h8.4a4.2 4.2 0 0 1-8.4 0z" /></>,
+  fire: <path d="M12 3c.5 3.5 4.5 5.5 4.5 10a4.5 4.5 0 0 1-9 0c0-2 1-3 2-4 .3 1.2.8 1.8 1.5 2C11 8.5 11.5 5.5 12 3z" />,
+  spark: <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM18.5 16.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z" />,
+  wow: <><circle cx="12" cy="12" r="9" /><path d="M8.3 9.3h.01M15.7 9.3h.01" /><ellipse cx="12" cy="15.5" rx="2" ry="2.6" /></>,
+  sad: <><circle cx="12" cy="12" r="9" /><path d="M8.3 9.3h.01M15.7 9.3h.01" /><path d="M8.5 16.5c1-1.5 2.2-2 3.5-2s2.5.5 3.5 2" /></>,
+  thumb: <path d="M7 11v9H4v-9zM7 11l4-7c1.5 0 2.5 1 2.2 2.5L12.7 10H19a1.8 1.8 0 0 1 1.7 2.2l-1.5 6.5A2 2 0 0 1 17.2 20H7" />,
+  eye: <><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" /><circle cx="12" cy="12" r="3" /></>,
+  trash: <path d="M5 7h14M9.5 7V4.5h5V7M7 7l1 13h8l1-13M10 11v6M14 11v6" />,
+  pencil: <path d="M4 20l1-4.5L16.5 4 20 7.5 8.5 19zM14.5 6l3.5 3.5" />,
+  phone: <path d="M6.5 3.5h3l1.5 4-2 1.5a11 11 0 0 0 5 5l1.5-2 4 1.5v3a2 2 0 0 1-2 2A15 15 0 0 1 4.5 5.5a2 2 0 0 1 2-2z" />,
+  star: <path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" />,
+  lock: <><rect x="5" y="10.5" width="14" height="10" rx="2" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></>,
+  unlock: <><rect x="5" y="10.5" width="14" height="10" rx="2" /><path d="M8 10.5V8a4 4 0 0 1 7.5-2" /></>,
+  bulb: <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" />,
+  mega: <path d="M3.5 10.5v3h3.5l8 4.5v-12l-8 4.5zM17.5 9.5a4 4 0 0 1 0 5M7 13.5l1 5h2.5l-1-4.5" />,
+  flag: <path d="M5 21V4M5 4h11l-2 4 2 4H5" />,
+};
+const EMO_MAP = {
+  "⚽": "ball", "✓": "check", "✔": "check", "✅": "checkc", "✕": "x", "✖": "x", "❌": "xc", "🧤": "glove", "🥅": "glove",
+  "🕐": "clock", "⏰": "clock", "⏳": "hourglass", "🔄": "refresh", "🏅": "medal", "🎖": "medal", "💰": "coin", "🔔": "bell",
+  "📋": "clip", "🔍": "search", "🎲": "dice", "⚠": "warn", "👑": "crown", "🤝": "together", "📍": "pin", "📌": "pin",
+  "📖": "book", "📜": "doc", "💳": "card", "⬆": "up", "⬇": "down", "👇": "down", "📲": "share", "🚫": "ban", "🗓": "cal", "📅": "cal",
+  "⚡": "bolt", "📺": "tv", "📷": "camera", "🎥": "video", "🖼": "image", "👤": "user", "⚙": "gear", "➕": "plus", "💬": "chat",
+  "📥": "inbox", "📤": "outbox", "🎟": "ticket", "⚖": "scale", "↩": "undo", "❤": "heart", "🤍": "heart", "😂": "laugh",
+  "🔥": "fire", "👏": "spark", "🙌": "spark", "😮": "wow", "😢": "sad", "👍": "thumb", "👁": "eye", "🗑": "trash", "✎": "pencil",
+  "📞": "phone", "⭐": "star", "★": "star", "🔒": "lock", "🔓": "unlock", "💡": "bulb", "📢": "mega",
+};
+const EMO_DOT = { "⚫": "#EDEDED", "🟠": "#FF8A3D", "⚪": "#AFC3D6", "🔴": "#e0243f" };
+const EMO_FILLED = new Set(["heart", "star", "crown", "bolt", "fire", "spark", "thumb", "mega"]);
+const EMO_RE = /(?:\p{Extended_Pictographic}|[✓✔✕✖↩✎★⚙➕⏳])️?[\u{1F3FB}-\u{1F3FF}]?/gu;
+function Emo({ e }) {
+  const base = String(e).replace(/[️\u{1F3FB}-\u{1F3FF}]/gu, "");
+  if (EMO_DOT[base]) return <span className="emo emo-dot" style={{ background: EMO_DOT[base] }} aria-hidden="true" />;
+  const name = EMO_MAP[base];
+  if (!name) return null;
+  const filled = base !== "🤍" && (EMO_FILLED.has(name) || base === "❤");
+  return (
+    <svg className={`emo emo-${name}`} viewBox="0 0 24 24" width="1.1em" height="1.1em" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {EMO_SVG[name]}
+    </svg>
+  );
+}
+// converte um texto com emoji em texto + ícones desenhados
+function emo(str) {
+  if (typeof str !== "string") return str;
+  const out = [];
+  let last = 0, k = 0, m;
+  EMO_RE.lastIndex = 0;
+  while ((m = EMO_RE.exec(str))) {
+    if (m.index > last) out.push(str.slice(last, m.index));
+    out.push(<Emo key={k++} e={m[0]} />);
+    last = m.index + m[0].length;
+  }
+  if (!out.length) return str;
+  if (last < str.length) out.push(str.slice(last));
+  return <>{out.map((x, i) => (typeof x === "string" ? <React.Fragment key={"t" + i}>{x}</React.Fragment> : x))}</>;
 }
 
 // Título de grupo da lista (ícones próprios no lugar de emoji) — layout FIFA/PES
@@ -5282,7 +5384,7 @@ function EscalacaoBanner({ onOpen, concluded }) {
       </span>
       {concluded && (
         <span className="escalacao-banner-concluded-note">
-          <span className="escalacao-banner-check">✔</span>
+          <span className="escalacao-banner-check"><Emo e="✔" /></span>
           PELADA CONCLUÍDA · Próxima pelada {nextPeladaLabel}
         </span>
       )}
@@ -5296,7 +5398,7 @@ function EscalacaoModal({ list, isAdmin, hasPelada, onClose, onSeePresence, onUn
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal escalacao-modal" onClick={(e) => e.stopPropagation()}>
-        <h2 className="modal-title">🔴 ESCALAÇÃO DEFINIDA</h2>
+        <h2 className="modal-title"><Emo e="🔴" /> ESCALAÇÃO DEFINIDA</h2>
 
         <div className="presence-page-card escalacao-header-card">
           <div className="presence-page-card-head">
@@ -5326,7 +5428,7 @@ function EscalacaoModal({ list, isAdmin, hasPelada, onClose, onSeePresence, onUn
             <section key={t.key} className="team-card" style={{ "--team-color": t.color }}>
               <div className="team-card-head">
                 <span className="team-card-title">
-                  {t.emoji} {t.label.toUpperCase()}
+                  {emo(t.emoji)} {t.label.toUpperCase()}
                 </span>
               </div>
               <ul className="team-player-list">
@@ -5337,7 +5439,7 @@ function EscalacaoModal({ list, isAdmin, hasPelada, onClose, onSeePresence, onUn
                       className="team-player-name presence-name-clickable"
                       onClick={() => onViewPlayer(p)}
                     >
-                      {displayName(p)} {list.considerGK && p.isGK ? "🧤" : ""}
+                      {displayName(p)} {list.considerGK && p.isGK ? emo("🧤") : ""}
                     </span>
                     <Stars count={starsFilled(p.rating)} />
                   </li>
@@ -5350,7 +5452,7 @@ function EscalacaoModal({ list, isAdmin, hasPelada, onClose, onSeePresence, onUn
         <div className="escalacao-modal-actions">
           {hasPelada && (
             <button className="btn btn-ghost btn-block" onClick={onSeePresence}>
-              📋 Ver lista de presença
+              <Emo e="📋" /> Ver lista de presença
             </button>
           )}
           <button className="btn btn-primary btn-block" onClick={onClose}>
@@ -5389,7 +5491,7 @@ const RULES_ITEMS = [
   "*Equilíbrio de times:* Fica definido a troca de peças chave após sorteio para equilíbrio e disputa saudável da pelada. Sabemos que em outras peladas não funciona assim, porém nossa turma é pequena e não somos 100% peladeiros. Portanto, contamos com a colaboração de todos quanto a isso, evitando piadas e falácias sobre o tema.",
   "*Pagamento Avulso:* Deverá ser feito até 14h da segunda-feira",
   "*Pagamento mensal:* Deverá ser feito *ATÉ A PRIMEIRA PELADA DO MÊS!* Após, multa 10$ por semana.",
-  "*Regra-mor do bom senso:* nossa pelada é pra divertir, de forma honesta e com disputa saudável. *Sem reclamações excessivas, sem molecagem.* Vamos resolver tudo considerando que estamos todos ali pra fugir do estresse e não entrar nele. 👍🏼",
+  emo("*Regra-mor do bom senso:* nossa pelada é pra divertir, de forma honesta e com disputa saudável. *Sem reclamações excessivas, sem molecagem.* Vamos resolver tudo considerando que estamos todos ali pra fugir do estresse e não entrar nele. 👍🏼"),
 ];
 const RULES_CONTACT =
   "*Qualquer dúvida, sugestão ou demanda, deverá ser feita diretamente aos ADMs, Norman, Felipe Muniz ou Freitas.*";
@@ -5410,11 +5512,11 @@ function RulesPage({ onBack }) {
         <div className="rules-meta">
           {RULES_META.map((line, i) => (
             <p key={i} className="rules-meta-line">
-              {line}
+              {emo(line)}
             </p>
           ))}
         </div>
-        <p className="rules-updated">{RULES_UPDATED_AT}</p>
+        <p className="rules-updated">{emo(RULES_UPDATED_AT)}</p>
         <ol className="rules-list">
           {RULES_ITEMS.map((item, i) => (
             <li key={i} className="rules-item">
@@ -5566,7 +5668,7 @@ function ChannelPlayer({ channel, onClose }) {
     <div className="ch-player">
       <div className="ch-player-head">
         <span className="ch-player-title">{channel.name}</span>
-        <button className="ch-x" onClick={onClose} aria-label="Fechar player">✕</button>
+        <button className="ch-x" onClick={onClose} aria-label="Fechar player"><Emo e="✕" /></button>
       </div>
       <video ref={videoRef} className="ch-video" controls playsInline autoPlay />
       {status === "loading" && <p className="ch-note">Carregando…</p>}
@@ -6961,7 +7063,7 @@ export default function PeladaApp() {
   const alertButton = (player, kind) =>
     isAdmin ? (
       <button type="button" className="mens-btn mens-btn-danger send-alert-btn" onClick={() => sendPaymentAlert(player, kind)}>
-        🔔 ENVIAR ALERTA
+        <Emo e="🔔" /> ENVIAR ALERTA
       </button>
     ) : null;
 
@@ -7461,7 +7563,7 @@ export default function PeladaApp() {
       {myPlayer && myAccessBlocked && (
         <div className="access-blocked-box">
           <p className="access-blocked-text">
-            🔒 Mensalidade de {monthKeyLabel(currentMonthKey())} pendente — o acesso à lista
+            <Emo e="🔒" /> Mensalidade de {monthKeyLabel(currentMonthKey())} pendente — o acesso à lista
             fica liberado assim que um administrador confirmar o pagamento.
           </p>
           <button className="btn btn-primary btn-block" onClick={() => setPaymentAlert("mensalista")}>
@@ -7477,17 +7579,17 @@ export default function PeladaApp() {
           >
             {amIConfirmed
               ? !isMensalista(myPlayer) && iAmWaitingAvulso
-                ? "↩ RETIRAR NOME DA LISTA DE ESPERA"
-                : "✖ CANCELAR Presença"
+                ? emo("↩ RETIRAR NOME DA LISTA DE ESPERA")
+                : emo("✖ CANCELAR Presença")
               : !isMensalista(myPlayer)
-              ? "⏳ ENTRAR NA LISTA DE ESPERA DE AVULSOS"
-              : "✓ CONFIRMAR PRESENÇA"}
+              ? emo("⏳ ENTRAR NA LISTA DE ESPERA DE AVULSOS")
+              : emo("✓ CONFIRMAR PRESENÇA")}
           </button>
           <button
             className={`btn ${amIAbsent ? "btn-primary" : "btn-ghost"}`}
             onClick={() => setMyPresenceStatus("absent")}
           >
-            {amIAbsent ? "↩ RETIRAR Ausência" : "❌ Marcar ausência"}
+            {amIAbsent ? emo("↩ RETIRAR Ausência") : emo("❌ Marcar ausência")}
           </button>
         </div>
       )}
@@ -7495,13 +7597,13 @@ export default function PeladaApp() {
         <div className="membership-interest-box">
           {myPlayer.membershipInterestAt ? (
             <p className="field-hint">
-              ✅ Pedido enviado em{" "}
+              <Emo e="✅" /> Pedido enviado em{" "}
               {new Date(myPlayer.membershipInterestAt).toLocaleDateString("pt-BR")} —
               aguardando aprovação de um administrador.
             </p>
           ) : (
             <button className="btn btn-ghost btn-block" onClick={expressMembershipInterest}>
-              🏅 Tenho interesse em ser mensalista
+              <Emo e="🏅" /> Tenho interesse em ser mensalista
             </button>
           )}
         </div>
@@ -7595,7 +7697,7 @@ export default function PeladaApp() {
                         className={`paid-pill ${entry.presence.paid ? "paid-pill-paid" : "paid-pill-pending"}`}
                         onClick={() => setPresencePaid(entry.presence.id, !entry.presence.paid)}
                       >
-                        {entry.presence.paid ? "✔ pagamento confirmado" : "pagamento pendente"}
+                        {entry.presence.paid ? emo("✔ pagamento confirmado") : "pagamento pendente"}
                       </button>
                     )}
                     {entry.presence.manually_promoted && (
@@ -7631,7 +7733,7 @@ export default function PeladaApp() {
                       className={`paid-pill ${entry.presence.paid ? "paid-pill-paid" : "paid-pill-pending"}`}
                       onClick={() => setPresencePaid(entry.presence.id, !entry.presence.paid)}
                     >
-                      {entry.presence.paid ? "✔ pagamento confirmado" : "pagamento pendente"}
+                      {entry.presence.paid ? emo("✔ pagamento confirmado") : "pagamento pendente"}
                     </button>
                     {entry.presence.manually_promoted && (
                       <button
@@ -7696,7 +7798,7 @@ export default function PeladaApp() {
                         className="link presence-promote-btn"
                         onClick={() => promoteAvulso(entry.presence.id)}
                       >
-                        ⬆️ subir pra lista agora
+                        <Emo e="⬆️" /> subir pra lista agora
                       </button>
                     ) : null
                   }
@@ -7725,7 +7827,7 @@ export default function PeladaApp() {
                         className="link presence-promote-btn"
                         onClick={() => promoteAvulso(entry.presence.id)}
                       >
-                        ⬆️ subir pra lista agora
+                        <Emo e="⬆️" /> subir pra lista agora
                       </button>
                     ) : null
                   }
@@ -7774,7 +7876,7 @@ export default function PeladaApp() {
 
       {(confirmedMensalistas.length > 0 || avulsoEntries.length > 0 || absentPlayers.length > 0) && (
         <button className="btn btn-ghost btn-block presence-share-btn" onClick={sharePresenceList}>
-          📲 Copiar lista para o WhatsApp
+          <Emo e="📲" /> Copiar lista para o WhatsApp
         </button>
       )}
       {cancelPresenceConfirm === "main" && cancelConfirmModal}
@@ -7793,13 +7895,13 @@ export default function PeladaApp() {
             className={`btn ${amIConfirmedExtra ? "btn-danger" : "btn-primary"}`}
             onClick={() => (amIConfirmedExtra ? setCancelPresenceConfirm("extra") : setMyExtraPresenceStatus("confirmed"))}
           >
-            {amIConfirmedExtra ? "✖ CANCELAR Presença" : "✓ CONFIRMAR PRESENÇA"}
+            {amIConfirmedExtra ? emo("✖ CANCELAR Presença") : emo("✓ CONFIRMAR PRESENÇA")}
           </button>
           <button
             className={`btn ${amIAbsentExtra ? "btn-primary" : "btn-ghost"}`}
             onClick={() => setMyExtraPresenceStatus("absent")}
           >
-            {amIAbsentExtra ? "↩ RETIRAR Ausência" : "❌ Marcar ausência"}
+            {amIAbsentExtra ? emo("↩ RETIRAR Ausência") : emo("❌ Marcar ausência")}
           </button>
         </div>
       )}
@@ -7996,7 +8098,7 @@ export default function PeladaApp() {
       setToast("Não foi possível enviar a sugestão. Tente novamente.");
       return false;
     }
-    setToast("Sugestão enviada! Obrigado 🙌");
+    setToast("Sugestão enviada! Obrigado!");
     return true;
   };
 
@@ -9041,7 +9143,7 @@ export default function PeladaApp() {
           onClick={() => setShowAccountModal(true)}
           aria-label="Minha conta"
         >
-          {isAdmin ? "🔓" : authUser ? "👤" : "⚙"}
+          {isAdmin ? emo("🔓") : authUser ? emo("👤") : emo("⚙")}
         </button>
         <button
           type="button"
@@ -9119,7 +9221,7 @@ export default function PeladaApp() {
                     storyPhotoCameraRef.current?.click();
                   }}
                 >
-                  📷 Tirar foto
+                  <Emo e="📷" /> Tirar foto
                 </button>
                 <button
                   type="button"
@@ -9133,7 +9235,7 @@ export default function PeladaApp() {
                     }
                   }}
                 >
-                  🎥 Gravar vídeo
+                  <Emo e="🎥" /> Gravar vídeo
                 </button>
                 <button
                   type="button"
@@ -9143,7 +9245,7 @@ export default function PeladaApp() {
                     storyGalleryFileRef.current?.click();
                   }}
                 >
-                  🖼️ Escolher da galeria
+                  <Emo e="🖼️" /> Escolher da galeria
                 </button>
                 <button
                   type="button"
@@ -9194,7 +9296,7 @@ export default function PeladaApp() {
 
           <div className="member-search">
             <div className="member-search-box">
-              <span className="member-search-icon">🔍</span>
+              <span className="member-search-icon"><Emo e="🔍" /></span>
               <input
                 className="member-search-input"
                 type="text"
@@ -9341,10 +9443,10 @@ export default function PeladaApp() {
               className={`mensalidade-cta-btn ${myReportedPaid ? "is-reported" : ""}`}
               onClick={() => setPaymentAlert("mensalista")}
             >
-              <span className="mensalidade-cta-title">💰 PAGAMENTO MENSALIDADE</span>
+              <span className="mensalidade-cta-title"><Emo e="💰" /> PAGAMENTO MENSALIDADE</span>
               <span className="mensalidade-cta-sub">
                 {myReportedPaid
-                  ? "✔ Você informou que já pagou — aguardando confirmação de um admin"
+                  ? emo("✔ Você informou que já pagou — aguardando confirmação de um admin")
                   : `${monthKeyLabel(currentMonthKey())} · toque pra ver o PIX`}
               </span>
             </button>
@@ -9378,7 +9480,7 @@ export default function PeladaApp() {
           {showPresenceListModal && pelada && (
             <div className="modal-backdrop" onClick={() => setShowPresenceListModal(false)}>
               <div className="modal presence-list-modal" onClick={(e) => e.stopPropagation()}>
-                <h2 className="modal-title">📋 Lista de presença · Pelada 4K</h2>
+                <h2 className="modal-title"><Emo e="📋" /> Lista de presença · Pelada 4K</h2>
                 {presenceListInner}
                 <div className="modal-actions">
                   <button className="btn btn-ghost btn-block" onClick={() => setShowPresenceListModal(false)}>
@@ -9392,11 +9494,11 @@ export default function PeladaApp() {
           <FeaturedCarousel players={players} onViewPlayer={setViewPlayer} />
 
           <button className="btn btn-ghost btn-block" onClick={openRulesPage}>
-            📖 REGRAS DA PELADA 4K
+            <Emo e="📖" /> REGRAS DA PELADA 4K
           </button>
 
           <button className="btn btn-ghost btn-block" onClick={openChannelsPage}>
-            📺 CANAIS (MINHA LISTA M3U)
+            <Emo e="📺" /> CANAIS (MINHA LISTA M3U)
           </button>
 
           {isAdmin && (
@@ -9456,7 +9558,7 @@ export default function PeladaApp() {
               className="btn btn-ghost btn-block interest-cta-btn"
               onClick={() => setShowPublicInterestList(true)}
             >
-              🏅 Interesse Mensalista
+              <Emo e="🏅" /> Interesse Mensalista
               {membershipInterestList.length > 0 && (
                 <span className="count-pill">{membershipInterestList.length}</span>
               )}
@@ -9483,7 +9585,7 @@ export default function PeladaApp() {
             <div className="select-links">
               {confirmedPlayers.length > 0 && (
                 <button className="link" onClick={pullPresenceIntoSelection}>
-                  🔔 Puxar lista de presença
+                  <Emo e="🔔" /> Puxar lista de presença
                 </button>
               )}
               <button className="link" onClick={() => setSelectedIds(new Set(players.map((p) => p.id)))}>
@@ -9513,7 +9615,7 @@ export default function PeladaApp() {
                     </span>
                   </div>
                   <span className="select-card-rating">{p.rating}</span>
-                  <span className={`check ${on ? "check-on" : ""}`}>{on ? "✓" : ""}</span>
+                  <span className={`check ${on ? "check-on" : ""}`}>{on ? emo("✓") : ""}</span>
                 </li>
               );
             })}
@@ -9565,7 +9667,7 @@ export default function PeladaApp() {
           </section>
 
           <section className="config-block">
-            <h2 className="config-title">🧤 Considerar goleiros?</h2>
+            <h2 className="config-title"><Emo e="🧤" /> Considerar goleiros?</h2>
             <div className="segmented">
               <button
                 className={`segmented-opt ${considerGK ? "segmented-opt-on" : ""}`}
@@ -9592,7 +9694,7 @@ export default function PeladaApp() {
                 className={`method-card ${method === "aleatorio" ? "method-card-on" : ""}`}
                 onClick={() => setMethod("aleatorio")}
               >
-                <span className="method-icon">🎲</span>
+                <span className="method-icon"><Emo e="🎲" /></span>
                 <span>
                   <span className="method-name">Aleatório</span>
                   <span className="method-desc">Todos com a mesma chance</span>
@@ -9602,7 +9704,7 @@ export default function PeladaApp() {
                 className={`method-card ${method === "qualidade" ? "method-card-on" : ""}`}
                 onClick={() => setMethod("qualidade")}
               >
-                <span className="method-icon">⭐</span>
+                <span className="method-icon"><Emo e="⭐" /></span>
                 <span>
                   <span className="method-name">Por qualidade</span>
                   <span className="method-desc">Times com força equilibrada</span>
@@ -9612,7 +9714,7 @@ export default function PeladaApp() {
                 className={`method-card ${method === "regras" ? "method-card-on" : ""}`}
                 onClick={() => setMethod("regras")}
               >
-                <span className="method-icon">📋</span>
+                <span className="method-icon"><Emo e="📋" /></span>
                 <span>
                   <span className="method-name">Regras</span>
                   <span className="method-desc">Separar ou manter jogadores juntos</span>
@@ -9625,7 +9727,7 @@ export default function PeladaApp() {
             <section className="config-block">
               <h2 className="config-title">Regras</h2>
 
-              <p className="rules-section-label">🚫 Separar (nunca no mesmo time)</p>
+              <p className="rules-section-label"><Emo e="🚫" /> Separar (nunca no mesmo time)</p>
               {separateGroups.map((group, gi) => (
                 <div className="separate-group-box" key={gi}>
                   <span className="separate-group-title">Grupo {gi + 1}</span>
@@ -9656,7 +9758,7 @@ export default function PeladaApp() {
                 </div>
               ))}
 
-              <p className="rules-section-label rules-section-label-spaced">🤝 Manter juntos</p>
+              <p className="rules-section-label rules-section-label-spaced"><Emo e="🤝" /> Manter juntos</p>
               <div className="rule-builder">
                 <div className="rule-pickers">
                   <select className="input" value={togetherA} onChange={(e) => setTogetherA(e.target.value)}>
@@ -9667,7 +9769,7 @@ export default function PeladaApp() {
                       </option>
                     ))}
                   </select>
-                  <span className="rule-symbol">🤝</span>
+                  <span className="rule-symbol"><Emo e="🤝" /></span>
                   <select className="input" value={togetherB} onChange={(e) => setTogetherB(e.target.value)}>
                     <option value="">Jogador B</option>
                     {selectedPlayers.map((p) => (
@@ -9691,7 +9793,7 @@ export default function PeladaApp() {
                   {togetherRules.map((r) => (
                     <li key={r.id} className="rule-row">
                       <span>
-                        {nameOf(r.a)} 🤝 {nameOf(r.b)}
+                        {nameOf(r.a)} <Emo e="🤝" /> {nameOf(r.b)}
                       </span>
                       <button className="link link-danger" onClick={() => removeTogetherRule(r.id)}>
                         remover
@@ -9713,7 +9815,7 @@ export default function PeladaApp() {
 
           <div className="bottom-bar">
             <button className="btn btn-primary btn-block" disabled={!configValid} onClick={runDraw}>
-              🎲 Sortear Times
+              <Emo e="🎲" /> Sortear Times
             </button>
           </div>
         </main>
@@ -9736,7 +9838,7 @@ export default function PeladaApp() {
           </button>
           <StepDots step={3} />
           <div className="screen-head">
-            <h1>Times Definidos ⚽</h1>
+            <h1>Times Definidos <Emo e="⚽" /></h1>
           </div>
 
           {result.gkMessage && <div className="info-banner">{result.gkMessage}</div>}
@@ -9745,7 +9847,7 @@ export default function PeladaApp() {
             <section key={t.key} className="team-card" style={{ "--team-color": t.color }}>
               <div className="team-card-head">
                 <span className="team-card-title">
-                  {t.emoji} {t.label.toUpperCase()}
+                  {emo(t.emoji)} {t.label.toUpperCase()}
                 </span>
               </div>
               <ul className="team-player-list">
@@ -9753,7 +9855,7 @@ export default function PeladaApp() {
                   <li key={p.id} className="team-player-row">
                     <Avatar player={p} shape="square" size={46} />
                     <span className="team-player-name">
-                      {displayName(p)} {result.considerGK && p.isGK ? "🧤" : ""}
+                      {displayName(p)} {result.considerGK && p.isGK ? emo("🧤") : ""}
                     </span>
                     <Stars count={starsFilled(p.rating)} />
                   </li>
@@ -9764,7 +9866,7 @@ export default function PeladaApp() {
           ))}
 
           <section className="balance-card">
-            <h2 className="config-title">⚖️ Equilíbrio</h2>
+            <h2 className="config-title"><Emo e="⚖️" /> Equilíbrio</h2>
             <Stars count={result.stars} />
             <p className="balance-label">{result.label}</p>
             <p className="balance-detail">
@@ -9777,17 +9879,17 @@ export default function PeladaApp() {
 
           <div className="result-actions">
             <button className="btn btn-ghost btn-block" onClick={redoDraw}>
-              🎲 Refazer Sorteio
+              <Emo e="🎲" /> Refazer Sorteio
             </button>
             <button className="btn btn-primary btn-block" onClick={doShare}>
-              📲 Compartilhar
+              <Emo e="📲" /> Compartilhar
             </button>
           </div>
 
           {isAdmin && (
             <>
               <button className="btn btn-primary btn-block publish-btn" onClick={publishList}>
-                {justPublished ? "✓ Lista publicada" : "📋 Publicar Lista"}
+                {justPublished ? emo("✓ Lista publicada") : emo("📋 Publicar Lista")}
               </button>
               <p className="field-hint publish-hint">
                 Publicar deixa essa lista visível pra todo mundo na página inicial, em "Lista Próxima Pelada".
@@ -11856,6 +11958,33 @@ function Styles() {
       .story-circle-btn:active .story-ring { transform: scale(.94); }
       .story-ring { transition: transform .2s cubic-bezier(.2,.8,.2,1); }
       .send-alert-btn, .mens-btn.send-alert-btn { background: linear-gradient(90deg, #ffffff 0%, #ffd9b0 45%, #ff7a00 100%) !important; color: #000 !important; box-shadow: inset 0 -3px 0 var(--alert-dark) !important; }
+
+      /* ===== ÍCONES DESENHADOS (no lugar de emoji) ===== */
+      .emo { width: 1.1em; height: 1.1em; vertical-align: -0.18em; flex: none; display: inline-block; }
+      .emo-dot { width: .75em; height: .75em; border-radius: 50%; vertical-align: -0.05em; box-shadow: 0 0 0 1px rgba(255,255,255,.25); }
+      .emo-heart { color: #e0607c; }
+      .payment-alert-icon, .announcement-icon { color: var(--gold); line-height: 1; }
+      .payment-alert-icon .emo, .announcement-icon .emo { width: 1em; height: 1em; }
+      .payment-alert-orange .payment-alert-icon { color: var(--alert); }
+      .method-icon, .rule-symbol, .admin-menu-item-icon, .admin-menu-trigger-icon, .membership-badge-icon { display: inline-flex; align-items: center; justify-content: center; color: var(--gold); }
+      .admin-menu-item-danger .admin-menu-item-icon { color: var(--maroon-light); }
+      .btn .emo, .mens-btn .emo { margin-right: 4px; }
+      .story-reaction-btn .emo { width: 26px; height: 26px; vertical-align: middle; }
+      .story-like-btn .emo { width: 24px; height: 24px; }
+
+      /* ===== FUNDO IGUAL AO DO MOCKUP (carvão + brilho dourado + faixa diagonal) ===== */
+      .stadium-bg {
+        background:
+          radial-gradient(circle at 20% 6%, rgba(233,185,73,.14), transparent 38%),
+          linear-gradient(115deg, #1c1d20 0%, #1c1d20 52%, #232427 52%, #232427 64%, #1c1d20 64%) !important;
+      }
+      .stadium-photo, .stadium-glow, .floating-logo, .stadium-vignette { display: none !important; }
+
+      /* ===== ALERTAS / POP-UPS FLUTUANTES NO CENTRO DA TELA ===== */
+      .modal-backdrop { align-items: center !important; padding: 18px !important; }
+      .modal { border-radius: 4px !important; max-width: 440px; padding: 22px 20px 22px !important; max-height: 86vh; animation: pg-pop .22s cubic-bezier(.2,.9,.3,1.2); }
+      @keyframes pg-pop { from { opacity: 0; transform: scale(.92) translateY(10px); } to { opacity: 1; transform: none; } }
+      .toast { bottom: auto !important; top: 50%; left: 50%; transform: translate(-50%, -50%) !important; border-radius: 0; clip-path: polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%); padding: 14px 28px; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 18px; letter-spacing: .6px; text-transform: uppercase; box-shadow: none; }
     `}</style>
   );
 }
