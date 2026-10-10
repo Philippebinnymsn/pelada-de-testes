@@ -4121,7 +4121,7 @@ function MensalistaControlModal({
         </ul>
         {gkMensalistas.length > 0 && (
           <>
-            <p className="presence-group-title">🥅 GOLEIROS</p>
+            <GroupTitle kind="gk">GOLEIROS</GroupTitle>
             <p className="field-hint">Goleiros não pagam mensalidade.</p>
             <ul className="presence-list">{gkMensalistas.map(renderRow)}</ul>
           </>
@@ -5037,7 +5037,7 @@ function PresenceHistoryModal({ history, loading, players, onClose, onReopen }) 
                 )}
                 {gks.length > 0 && (
                   <>
-                    <p className="presence-group-title">🥅 GOLEIROS</p>
+                    <GroupTitle kind="gk">GOLEIROS</GroupTitle>
                     <ul className="presence-list">
                       {gks.map((pl) => (
                         <li key={pl.id} className="presence-row">
@@ -5048,7 +5048,7 @@ function PresenceHistoryModal({ history, loading, players, onClose, onReopen }) 
                     </ul>
                   </>
                 )}
-                <p className="presence-group-title">✅ CONFIRMADOS</p>
+                <GroupTitle kind="ok">CONFIRMADOS</GroupTitle>
                 <ul className="presence-list">
                   {nonGks.map((pl, i) => (
                     <li key={pl.id} className="presence-row">
@@ -5060,7 +5060,7 @@ function PresenceHistoryModal({ history, loading, players, onClose, onReopen }) 
                 </ul>
                 {guests.length > 0 && (
                   <>
-                    <p className="presence-group-title">🔔 AVULSOS</p>
+                    <GroupTitle kind="ticket">AVULSOS</GroupTitle>
                     <ul className="presence-list">
                       {guests.map((g, i) => (
                         <li key={g.id} className="presence-row">
@@ -5073,7 +5073,7 @@ function PresenceHistoryModal({ history, loading, players, onClose, onReopen }) 
                 )}
                 {absent.length > 0 && (
                   <>
-                    <p className="presence-group-title">❌ M. AUSENTES</p>
+                    <GroupTitle kind="out">M. AUSENTES</GroupTitle>
                     <ul className="presence-list">
                       {absent.map((pl, i) => (
                         <li key={pl.id} className="presence-row">
@@ -5233,13 +5233,36 @@ function AdminToolbar({
   );
 }
 
+// Título de grupo da lista (ícones próprios no lugar de emoji) — layout FIFA/PES
+const GROUP_ICONS = {
+  gk: <><path d="M7 13V6.5a1.5 1.5 0 0 1 3 0V11" /><path d="M10 11V4.5a1.5 1.5 0 0 1 3 0V11" /><path d="M13 11V5.5a1.5 1.5 0 0 1 3 0V12" /><path d="M16 12V8.5a1.5 1.5 0 0 1 3 0V15c0 4-2.6 6.5-6.5 6.5S7 19 7 15.5L4.6 12.6a1.5 1.5 0 0 1 2.3-1.9L7 11" /><path d="M8 18h8" /></>,
+  ok: <><path d="M12 3l7.5 2.8V12c0 4.2-3.1 7.4-7.5 9-4.4-1.6-7.5-4.8-7.5-9V5.8L12 3z" /><path d="M8.6 12.2l2.4 2.4 4.6-5" /></>,
+  ticket: <><path d="M3 8.5V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.5a2.5 2.5 0 0 0 0 5V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-4.5a2.5 2.5 0 0 0 0-5z" /><path d="M14.5 5v2M14.5 11v2M14.5 17v2" /><path d="M8 10.5v3M6.5 12h3" /></>,
+  out: <><path d="M12 3l7.5 2.8V12c0 4.2-3.1 7.4-7.5 9-4.4-1.6-7.5-4.8-7.5-9V5.8L12 3z" /><path d="M9.2 9.4l5.6 5.6M14.8 9.4l-5.6 5.6" /></>,
+};
+function GroupTitle({ kind, children }) {
+  return (
+    <p className={`presence-group-title presence-group-${kind}`}>
+      <svg className="pgt-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {GROUP_ICONS[kind]}
+      </svg>
+      <span>{children}</span>
+    </p>
+  );
+}
+
 // Banner grande e animado — chama atenção pra pelada aberta sem já jogar o
 // conteúdo inteiro da lista na tela.
-function PresenceOpenBanner({ onOpen, title = "LISTA ABERTA", cta = "ACESSE AQUI! ⚽", className = "" }) {
+function PresenceOpenBanner({ onOpen, title = "LISTA ABERTA", cta = "ACESSE AQUI ▶", className = "" }) {
   return (
     <button className={`presence-open-banner ${className}`} onClick={onOpen}>
-      <span className="presence-open-banner-title">{title}</span>
-      <span className="presence-open-banner-cta">{cta}</span>
+      <span className="pob-in">
+        <span className="pob-left">
+          <span className="pob-live"><i className="pob-dot" />AO VIVO</span>
+          <span className="presence-open-banner-title">{title}</span>
+        </span>
+        <span className="presence-open-banner-cta">{cta}</span>
+      </span>
     </button>
   );
 }
@@ -5253,8 +5276,10 @@ function EscalacaoBanner({ onOpen, concluded }) {
       className={`presence-open-banner escalacao-banner ${concluded ? "escalacao-banner-concluded" : ""}`}
       onClick={onOpen}
     >
-      <span className="presence-open-banner-title">ESCALAÇÃO DEFINIDA</span>
-      <span className="presence-open-banner-cta">VER TIMES ⚽</span>
+      <span className="pob-in">
+        <span className="pob-left"><span className="presence-open-banner-title">ESCALAÇÃO DEFINIDA</span></span>
+        <span className="presence-open-banner-cta">ACESSE AQUI ▶</span>
+      </span>
       {concluded && (
         <span className="escalacao-banner-concluded-note">
           <span className="escalacao-banner-check">✔</span>
@@ -5477,21 +5502,37 @@ function loadHlsLib() {
   return hlsLoadPromise;
 }
 
+const STREAM_PROXY = (import.meta.env.VITE_STREAM_PROXY || "").replace(/\/+$/, "");
+function proxied(url) {
+  return STREAM_PROXY ? `${STREAM_PROXY}/?u=${encodeURIComponent(url)}` : url;
+}
+
 function ChannelPlayer({ channel, onClose }) {
   const videoRef = useRef(null);
   const [status, setStatus] = useState("loading"); // loading | playing | error
+  const pageIsHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+  const needsProxy = !!STREAM_PROXY && pageIsHttps && /^http:\/\//i.test(channel?.url || "");
+  // 1ª tentativa direta (ou já pelo proxy se o link é http://); se falhar e há proxy, tenta 1x pelo proxy
+  const [useProxy, setUseProxy] = useState(needsProxy);
+  useEffect(() => {
+    setUseProxy(needsProxy);
+  }, [channel?.url, needsProxy]);
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !channel) return;
     let hls = null;
     let cancelled = false;
     setStatus("loading");
-    const url = channel.url;
-    const fail = () => !cancelled && setStatus("error");
+    const url = useProxy ? proxied(channel.url) : channel.url;
+    const fail = () => {
+      if (cancelled) return;
+      if (STREAM_PROXY && !useProxy) setUseProxy(true);
+      else setStatus("error");
+    };
     const onPlaying = () => !cancelled && setStatus("playing");
     video.addEventListener("playing", onPlaying);
     video.addEventListener("error", fail);
-    const isHls = /\.m3u8(\?|$)/i.test(url) || /\/hls\//i.test(url);
+    const isHls = /\.m3u8(\?|$)/i.test(channel.url) || /\/hls\//i.test(channel.url);
     if (isHls && !video.canPlayType("application/vnd.apple.mpegurl")) {
       loadHlsLib()
         .then((Hls) => {
@@ -5518,9 +5559,9 @@ function ChannelPlayer({ channel, onClose }) {
       video.removeAttribute("src");
       video.load();
     };
-  }, [channel?.url]);
+  }, [channel?.url, useProxy]);
   if (!channel) return null;
-  const insecure = /^http:\/\//i.test(channel.url) && typeof window !== "undefined" && window.location.protocol === "https:";
+  const insecure = /^http:\/\//i.test(channel.url) && pageIsHttps;
   return (
     <div className="ch-player">
       <div className="ch-player-head">
@@ -5533,7 +5574,9 @@ function ChannelPlayer({ channel, onClose }) {
         <p className="ch-note ch-note-err">
           Não foi possível reproduzir este canal.{" "}
           {insecure
-            ? "O link é http:// e o navegador bloqueia em página https://."
+            ? STREAM_PROXY
+              ? "Mesmo pelo desbloqueador https não foi possível abrir este canal (pode estar fora do ar)."
+              : "O link é http:// e o navegador bloqueia em página https://."
             : "O servidor pode bloquear o acesso pelo navegador (CORS), estar fora do ar ou usar um formato não suportado."}
         </p>
       )}
@@ -7479,7 +7522,7 @@ export default function PeladaApp() {
 
       {confirmedGKs.length > 0 && (
         <>
-          <p className="presence-group-title">🥅 GOLEIROS</p>
+          <GroupTitle kind="gk">GOLEIROS</GroupTitle>
           <ul className="presence-card-list">
             {confirmedGKs.map((p) => (
               <PresenceRowCard
@@ -7501,7 +7544,7 @@ export default function PeladaApp() {
         </>
       )}
 
-      <p className="presence-group-title">✅ CONFIRMADOS</p>
+      <GroupTitle kind="ok">CONFIRMADOS</GroupTitle>
       <ul className="presence-card-list">
         {confirmedNonGKs.map((p) => (
           <PresenceRowCard
@@ -7620,7 +7663,7 @@ export default function PeladaApp() {
 
       {(waitingAvulsoEntries.length > 0 || isAdmin) && (
         <>
-          <p className="presence-group-title">🔔 AVULSOS (fila de espera)</p>
+          <GroupTitle kind="ticket">AVULSOS (fila de espera)</GroupTitle>
           {isAdmin && waitingAvulsoEntries.length > 1 && (
             <p className="field-hint">
               Use as setas pra mudar a ordem da fila — quem está mais em cima sobe primeiro pra
@@ -7705,7 +7748,7 @@ export default function PeladaApp() {
 
       {(absentPlayers.length > 0 || isAdmin) && (
         <>
-          <p className="presence-group-title">❌ M. AUSENTES</p>
+          <GroupTitle kind="out">M. AUSENTES</GroupTitle>
           <ul className="presence-card-list">
             {absentPlayers.map((p) => (
               <PresenceRowCard
@@ -7776,7 +7819,7 @@ export default function PeladaApp() {
 
       {confirmedExtraGKs.length > 0 && (
         <>
-          <p className="presence-group-title">🥅 GOLEIROS</p>
+          <GroupTitle kind="gk">GOLEIROS</GroupTitle>
           <ul className="presence-card-list">
             {confirmedExtraGKs.map((p) => (
               <PresenceRowCard
@@ -7798,7 +7841,7 @@ export default function PeladaApp() {
         </>
       )}
 
-      <p className="presence-group-title">✅ CONFIRMADOS</p>
+      <GroupTitle kind="ok">CONFIRMADOS</GroupTitle>
       <ul className="presence-card-list">
         {confirmedExtraNonGKs.map((p) => (
           <PresenceRowCard
@@ -7845,7 +7888,7 @@ export default function PeladaApp() {
 
       {(absentExtraPlayers.length > 0 || isAdmin) && (
         <>
-          <p className="presence-group-title">❌ M. AUSENTES</p>
+          <GroupTitle kind="out">M. AUSENTES</GroupTitle>
           <ul className="presence-card-list">
             {absentExtraPlayers.map((p) => (
               <PresenceRowCard
@@ -9010,8 +9053,9 @@ export default function PeladaApp() {
         >
           <img src={LOGO_DATA_URL} alt="Pelada" className="logo-crest" />
         </button>
-        <div className="topbar-divider" />
+        <div className="topbar-flare" aria-hidden="true" />
         <span className="topbar-caption">PELADA 4K OFICIAL</span>
+        <span className="topbar-season">TEMPORADA 2026</span>
       </header>
 
       {toast && <div className="toast">{toast}</div>}
@@ -9267,7 +9311,7 @@ export default function PeladaApp() {
             <PresenceOpenBanner
               onOpen={openExtraPresenceListPage}
               title="LISTA - PELADA EXTRA"
-              cta="ACESSE AQUI! ⚡"
+              cta="ACESSE AQUI ▶"
               className="extra-banner"
             />
           )}
@@ -10049,7 +10093,7 @@ export default function PeladaApp() {
 function Styles() {
   return (
     <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,600;1,700;1,800&family=Inter:wght@400;500;600;700&display=swap');
 
       .pelada-root {
         --bg: #0a0908;
@@ -11733,6 +11777,85 @@ function Styles() {
       .ch-video { width: 100%; max-height: 56vh; background: #000; display: block; }
       .ch-note { font-size: 12.5px; color: var(--text-dim); margin: 8px 12px; line-height: 1.45; }
       .ch-note-err { color: var(--alert); }
+
+      /* ===== LAYOUT FIFA/PES (mockup N-Carvão) ===== */
+      /* topo: logo grande centralizado, flare dourado, título e temporada */
+      .logo-crest { width: 138px; height: 140px; }
+      .topbar { gap: 0; padding-bottom: 8px; }
+      .topbar-divider { display: none; }
+      .topbar-flare { position: relative; width: 90px; height: 8px; margin: 2px 0 4px;
+        background: linear-gradient(90deg, transparent, #e9b949 30%, #fff3c4 50%, #e9b949 70%, transparent) center/100% 2px no-repeat; }
+      .topbar-flare::after { content: ""; position: absolute; left: 50%; top: 1px; width: 6px; height: 6px; margin-left: -3px; background: #fff3c4; transform: rotate(45deg); box-shadow: 0 0 10px #e9b949; }
+      .pelada-root .topbar-caption { font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 30px; line-height: 1; letter-spacing: 3px; color: #fff; }
+      .topbar-season { font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 5px; color: var(--gold); margin-top: 2px; text-transform: uppercase; }
+
+      /* animações compartilhadas */
+      @keyframes pg-floaty { 0%,100% { translate: 0 0; } 50% { translate: 0 -5px; } }
+      @keyframes pg-shine { 0% { background-position: 150% 0; } 100% { background-position: -50% 0; } }
+      @keyframes pg-dot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.7); } }
+      @keyframes pg-gold { 0%,100% { box-shadow: 0 4px 0 rgba(0,0,0,.5), 0 0 0 0 rgba(233,185,73,.55); } 60% { box-shadow: 0 4px 0 rgba(0,0,0,.5), 0 0 0 14px rgba(233,185,73,0); } }
+      @keyframes pg-bord { 0%,100% { box-shadow: 0 4px 0 #3d0715, 0 0 0 0 rgba(233,185,73,.55); } 60% { box-shadow: 0 4px 0 #3d0715, 0 0 0 12px rgba(233,185,73,0); } }
+
+      /* banners em paralelogramo: LISTA ABERTA (branco) e ESCALAÇÃO DEFINIDA (bordô) */
+      .presence-open-banner {
+        clip-path: none; transform: skewX(-14deg); border-radius: 0; border: none; border-left: 6px solid var(--maroon);
+        flex-direction: row; align-items: stretch; padding: 10px 16px; margin: 14px 0 0; background: #fff;
+        box-shadow: 0 4px 0 rgba(0,0,0,.5); position: relative; overflow: hidden;
+        animation: pg-gold 1.8s ease-in-out infinite, pg-floaty 2.4s ease-in-out infinite;
+        transition: filter .18s ease, box-shadow .18s ease;
+      }
+      .presence-open-banner::after { content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.45), transparent); transform: skewX(-20deg); transition: left .55s ease; pointer-events: none; }
+      .presence-open-banner:hover { filter: brightness(1.08); }
+      .presence-open-banner:hover::after { left: 130%; }
+      .presence-open-banner:active { filter: brightness(.9); box-shadow: 0 1px 0 rgba(0,0,0,.5); }
+      .pob-in { display: flex; align-items: center; width: 100%; transform: skewX(14deg); text-align: left; }
+      .pob-left { flex: 1; display: flex; flex-direction: column; align-items: flex-start; }
+      .pob-live { display: inline-flex; align-items: center; gap: 6px; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 12px; letter-spacing: 3px;
+        background: linear-gradient(100deg,#8a1430 0%,#8a1430 38%,#ff6f8f 50%,#8a1430 62%,#8a1430 100%); background-size: 250% 100%;
+        -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; animation: pg-shine 1.8s linear infinite; }
+      .pob-dot { width: 8px; height: 8px; border-radius: 50%; background: #e0243f; box-shadow: 0 0 8px #ff3b5c; animation: pg-dot 1.1s ease-in-out infinite; -webkit-text-fill-color: initial; }
+      .presence-open-banner .presence-open-banner-title { font-size: 26px; line-height: 1; letter-spacing: 1px; }
+      .presence-open-banner .presence-open-banner-cta { font-size: 18px; letter-spacing: 1px; white-space: nowrap; }
+      .escalacao-banner { background: linear-gradient(100deg,#a3183a,#6b0f26); border-left: 8px solid #fff; animation: pg-bord 2s ease-in-out infinite, pg-floaty 2.6s ease-in-out .5s infinite; flex-wrap: wrap; }
+      .escalacao-banner .presence-open-banner-title { color: #fff; font-size: 24px; }
+      .escalacao-banner .presence-open-banner-cta { color: var(--gold); }
+      .escalacao-banner .pob-in { width: 100%; }
+      .escalacao-banner-concluded { background: linear-gradient(100deg,#4a4d54,#35373c); border-left-color: #8a8f96; animation: none; }
+      .escalacao-banner-concluded .presence-open-banner-cta { color: #fff; }
+      .escalacao-banner-concluded-note { transform: skewX(14deg); }
+      .extra-banner { background: #fff; border-left-color: var(--gold); }
+
+      /* lista de presença: um box grande por grupo, nomes em linhas */
+      .presence-group-title { display: flex; align-items: center; gap: 8px; width: fit-content; margin: 18px 0 8px; padding: 3px 18px 3px 12px; transform: skewX(-14deg); clip-path: none; font-size: 19px; }
+      .presence-group-title > * { transform: skewX(14deg); }
+      .presence-group-title .pgt-ico { flex: none; }
+      .presence-group-out { background: linear-gradient(90deg,#b8284a,#8a1430); color: #fff; }
+      .presence-card-list, ul.presence-list {
+        gap: 0; padding: 0; margin: 0 0 4px; list-style: none; background: var(--surface); border-left: 6px solid var(--gold);
+        border-radius: 0 6px 6px 0; box-shadow: inset 0 1px 0 rgba(233,185,73,.25); overflow: hidden;
+      }
+      .presence-group-out + .presence-card-list, .presence-group-out + ul.presence-list { border-left-color: var(--maroon-light); }
+      .presence-card-row, ul.presence-list .presence-row {
+        clip-path: none; border-radius: 0; border-left: none; background: transparent; box-shadow: none; margin: 0;
+        border-bottom: 1px solid var(--border); padding: 8px 12px;
+        transition: background .18s ease, translate .18s ease;
+      }
+      .presence-card-row:last-child, ul.presence-list .presence-row:last-child { border-bottom: none; }
+      .presence-card-row:hover, ul.presence-list .presence-row:hover { background: rgba(233,185,73,.07); translate: 3px 0; }
+      .presence-card-row:active { background: rgba(233,185,73,.14); translate: 1px 1px; }
+
+      /* botões: transições ao passar o dedo/mouse e clicar */
+      .btn, .mens-btn, .segmented-opt, .paid-pill, .reorder-btn, .admin-menu-trigger, .roster-row, .story-circle-btn, .admin-gear-btn {
+        transition: transform .18s cubic-bezier(.2,.8,.2,1), filter .18s ease, box-shadow .18s ease, translate .18s ease;
+      }
+      .btn:hover, .mens-btn:hover, .admin-menu-trigger:hover { filter: brightness(1.1); transform: translateY(-2px); }
+      .btn:active, .mens-btn:active, .admin-menu-trigger:active { filter: brightness(.88); transform: translateY(3px); transition-duration: .06s; }
+      .roster-row:hover { translate: 4px 0; filter: brightness(1.1); }
+      .roster-row:active { translate: 2px 2px; filter: brightness(.9); transition-duration: .06s; }
+      .story-circle-btn:hover .story-ring { transform: scale(1.08) rotate(8deg); }
+      .story-circle-btn:active .story-ring { transform: scale(.94); }
+      .story-ring { transition: transform .2s cubic-bezier(.2,.8,.2,1); }
+      .send-alert-btn, .mens-btn.send-alert-btn { background: linear-gradient(90deg, #ffffff 0%, #ffd9b0 45%, #ff7a00 100%) !important; color: #000 !important; box-shadow: inset 0 -3px 0 var(--alert-dark) !important; }
     `}</style>
   );
 }
