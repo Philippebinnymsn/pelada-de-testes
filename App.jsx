@@ -12172,7 +12172,7 @@ function Styles() {
       .fut-gold .fut-i { background: linear-gradient(160deg,#fff1b8 0%,#e0ae3a 38%,#b8862b 70%,#8a5d12 100%); color: #241503; }
       .fut-silver .fut-i { background: linear-gradient(160deg,#ffffff 0%,#dfe2e8 40%,#a9adb6 74%,#7b7f8b 100%); color: #15171c; }
       .fut-bord .fut-i { background: linear-gradient(160deg,#e0587a 0%,#a3183a 38%,#8a1430 66%,#4a0816 100%); color: #fff4dc; }
-      .fut-bg { position: absolute; left: 4%; right: 4%; top: 4%; height: 70%; filter: blur(.9cqw); opacity: .8; overflow: hidden;
+      .fut-bg { position: absolute; left: 4%; right: 4%; top: 4%; height: 70%; filter: blur(.3cqw); opacity: .92; overflow: hidden;
         display: flex; align-items: flex-end; justify-content: center;
         -webkit-mask-image: linear-gradient(180deg,#000 50%,transparent); mask-image: linear-gradient(180deg,#000 50%,transparent); }
       .fut-bg svg { width: 100%; height: 100%; opacity: .4; }
@@ -12188,7 +12188,7 @@ function Styles() {
       .fut-name { position: absolute; left: 6cqw; right: 6cqw; top: 61cqw; text-align: center; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 12.5cqw; letter-spacing: .7cqw; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; }
       .fut-tag { position: absolute; left: 6cqw; right: 6cqw; top: 72.5cqw; text-align: center; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 6cqw; letter-spacing: 1.2cqw; text-transform: uppercase; opacity: .9; }
       .fut-line { position: absolute; left: 11cqw; right: 11cqw; top: 81cqw; height: .5cqw; background: currentColor; opacity: .35; }
-      .fut-rate { position: absolute; left: 11cqw; top: 92cqw; display: flex; flex-direction: column; align-items: flex-end; line-height: 1; }
+      .fut-rate { position: absolute; left: 11cqw; top: 86cqw; height: 36cqw; display: flex; flex-direction: column; justify-content: center; align-items: flex-end; line-height: 1; }
       .fut-rate b { font-family: 'Anton',sans-serif; font-weight: 400; font-size: 26cqw; line-height: .95; }
       .fut-rate i { font-family: 'Barlow Condensed',sans-serif; font-style: normal; font-weight: 700; font-size: 8cqw; letter-spacing: 1cqw; margin-top: 1.5cqw; }
       .fut-av { position: absolute; right: 9cqw; top: 86cqw; width: 36cqw; height: 36cqw; border-radius: 50%; overflow: hidden; background: rgba(0,0,0,.32);
