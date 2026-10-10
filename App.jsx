@@ -2256,13 +2256,14 @@ function FeaturedCards({ players, onViewPlayer }) {
                   <div className="fut-shade" />
                   {p.shirtNumber != null && (
                     <div className="fut-cam">
-                      <span className="cam-l">CAMISA</span>
+                      <svg viewBox="0 0 64 64" aria-hidden="true">
+                        <path d="M22 6L8 12 2 26l12 5v27h36V31l12-5-6-14-14-6c-2 5-6 8-10 8s-8-3-10-8z" />
+                      </svg>
                       <span className="cam-n">{p.shirtNumber}</span>
                     </div>
                   )}
                   <div className="fut-name">{label}</div>
                   <div className="fut-tag">{tag}</div>
-                  <div className="fut-line" />
                   <div className="fut-rate">
                     <b>{p.rating}</b>
                     <i>{posCode(p.position)}</i>
@@ -12181,15 +12182,21 @@ function Styles() {
       .fut-gold .fut-shade { background: linear-gradient(155deg, rgba(200,150,42,0) 18%, rgba(200,150,42,1) 78%); }
       .fut-silver .fut-shade { background: linear-gradient(155deg, rgba(154,158,169,0) 18%, rgba(154,158,169,1) 78%); }
       .fut-bord .fut-shade { background: linear-gradient(155deg, rgba(107,15,38,0) 18%, rgba(107,15,38,1) 78%); }
-      .fut-cam { position: absolute; left: 11cqw; top: 9cqw; display: flex; flex-direction: column; align-items: flex-start; line-height: 1; text-shadow: 0 1px 3px rgba(255,255,255,.35); }
-      .cam-l { font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 4.6cqw; letter-spacing: .9cqw; }
-      .cam-n { font-family: 'Anton',sans-serif; font-size: 12.5cqw; line-height: 1.02; }
-      .fut-name { position: absolute; left: 6cqw; right: 6cqw; top: 61cqw; text-align: center; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 12.5cqw; letter-spacing: .7cqw; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; }
-      .fut-tag { position: absolute; left: 6cqw; right: 6cqw; top: 72.5cqw; text-align: center; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 6cqw; letter-spacing: 1.2cqw; text-transform: uppercase; opacity: .9; }
+      .fut-cam { position: absolute; left: 11cqw; top: 8cqw; width: 27cqw; height: 27cqw; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 .6cqw .8cqw rgba(0,0,0,.35)); }
+      .fut-cam svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+      .fut-gold .fut-cam svg { fill: #241503; stroke: #f6d374; }
+      .fut-silver .fut-cam svg { fill: #15171c; stroke: #ffffff; }
+      .fut-bord .fut-cam svg { fill: #fff4dc; stroke: #3d0715; }
+      .fut-cam svg { stroke-width: 2.4; stroke-linejoin: round; }
+      .cam-n { position: relative; margin-top: 3.2cqw; font-family: 'Anton',sans-serif; font-size: 9.5cqw; line-height: 1; letter-spacing: .1cqw; }
+      .fut-gold .cam-n { color: #f6d374; }
+      .fut-silver .cam-n { color: #ffffff; }
+      .fut-bord .cam-n { color: #6b0f26; }
+      .fut-name { position: absolute; left: 38cqw; right: 11cqw; top: 12cqw; text-align: right; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 8.8cqw; letter-spacing: .3cqw; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; }
+      .fut-tag { position: absolute; left: 38cqw; right: 11cqw; top: 23cqw; text-align: right; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 5.2cqw; letter-spacing: 1cqw; text-transform: uppercase; opacity: .92; }
       .fut-gold .fut-name, .fut-silver .fut-name, .fut-gold .fut-tag, .fut-silver .fut-tag { text-shadow: 0 0 1.2cqw rgba(255,255,255,.75), 0 0 .4cqw rgba(255,255,255,.7); }
       .fut-bord .fut-name, .fut-bord .fut-tag { text-shadow: 0 .3cqw 1.2cqw rgba(0,0,0,.85); }
-      .fut-line { position: absolute; left: 11cqw; right: 11cqw; top: 81cqw; height: .5cqw; background: currentColor; opacity: .35; }
-      .fut-rate { position: absolute; left: 11cqw; top: 86cqw; height: 36cqw; display: flex; flex-direction: column; justify-content: center; align-items: flex-end; line-height: 1; }
+      .fut-rate { position: absolute; left: 18cqw; top: 86cqw; height: 36cqw; display: flex; flex-direction: column; justify-content: center; align-items: flex-end; line-height: 1; }
       .fut-rate b { font-family: 'Anton',sans-serif; font-weight: 400; font-size: 26cqw; line-height: .95; }
       .fut-rate i { font-family: 'Barlow Condensed',sans-serif; font-style: normal; font-weight: 700; font-size: 8cqw; letter-spacing: 1cqw; margin-top: 1.5cqw; }
       .fut-av { position: absolute; right: 9cqw; top: 86cqw; width: 36cqw; height: 36cqw; border-radius: 50%; overflow: hidden; background: rgba(0,0,0,.32);
