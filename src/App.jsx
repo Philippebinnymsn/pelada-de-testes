@@ -2101,8 +2101,23 @@ function ProfileModal({ player, onClose, onEdit, isAdmin, canEditOwn, phone }) {
               <span className="profile-stat-value">{player.position || "—"}</span>
               <span className="profile-stat-label">Posição</span>
             </div>
-            <div className="profile-stat">
-              <span className="profile-stat-value">{player.rating}/10</span>
+            <div className="profile-stat profile-stat-nota">
+              <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true">
+                <defs>
+                  <clipPath id="futp" clipPathUnits="objectBoundingBox">
+                    <path d="M0.10,0 L0.90,0 Q1,0 1,0.07 L1,0.80 Q1,0.90 0.80,0.945 L0.5,1 L0.20,0.945 Q0,0.90 0,0.80 L0,0.07 Q0,0 0.10,0 Z" />
+                  </clipPath>
+                </defs>
+              </svg>
+              <div className={`fut nota-card fut-${player.isGK ? "bord" : isMensalista(player) ? "gold" : "silver"}`}>
+                <div className="fut-o">
+                  <div className="fut-i">
+                    <div className="nota-n">{player.rating}</div>
+                    <div className="nota-p">{posCode(player.position)}</div>
+                    <div className="fut-glass" />
+                  </div>
+                </div>
+              </div>
               <span className="profile-stat-label">Nota</span>
             </div>
           </div>
@@ -12016,6 +12031,22 @@ function Styles() {
       .profile-hero-scrim { background: linear-gradient(180deg, rgba(10,9,8,0) 30%, rgba(10,9,8,.35) 55%, rgba(10,9,8,.78) 80%, rgba(10,9,8,.96) 100%); }
       .profile-hero-name-row .avatar { border-radius: 50% !important; }
       .profile-hero-name-text { font-family: 'Anton','Barlow Condensed',sans-serif; text-transform: uppercase; }
+      .modal.profile-modal { border: 0 !important; box-shadow: 0 18px 40px rgba(0,0,0,.6) !important; background: #000 !important; border-radius: 18px !important; }
+      .profile-hero { border-radius: 18px 18px 0 0; background: #000; }
+      .profile-hero-scrim { background: linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,.4) 55%, rgba(0,0,0,.82) 80%, #000 100%); }
+      .profile-panel { background: #000; }
+      .nota-card { width: 84px !important; flex: none; margin: 0 auto 6px; filter: drop-shadow(0 4px 6px rgba(0,0,0,.5)); }
+      .nota-n { position: absolute; left: 0; right: 0; top: 17cqw; text-align: center; font-family: 'Anton',sans-serif; font-size: 44cqw; line-height: 1; }
+      .nota-p { position: absolute; left: 0; right: 0; top: 66cqw; text-align: center; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 15cqw; letter-spacing: 1.5cqw; }
+      .profile-stat-nota { display: flex; flex-direction: column; align-items: center; }
+      /* grupos da lista: goleiros bordô, confirmados dourado, avulsos prata, ausentes cinza escuro */
+      .presence-group-gk { background: linear-gradient(90deg,#b8284a,#6b0f26); color: #fff; }
+      .presence-group-gk + .presence-card-list, .presence-group-gk + ul.presence-list { border-left-color: #a3183a; box-shadow: inset 0 1px 0 rgba(224,88,122,.3); }
+      .presence-group-ok { background: linear-gradient(90deg,#f6d374,#c8962a); color: #2a1a02; }
+      .presence-group-ticket { background: linear-gradient(90deg,#f1f3f7,#9a9ea9); color: #15171c; }
+      .presence-group-ticket + .presence-card-list, .presence-group-ticket + ul.presence-list { border-left-color: #b6bac4; box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
+      .presence-group-out { background: linear-gradient(90deg,#4f535b,#2c2e33); color: #fff; }
+      .presence-group-out + .presence-card-list, .presence-group-out + ul.presence-list { border-left-color: #5a5e66; box-shadow: none; }
 
       /* ===== MODAIS ===== */
       .modal { border-radius: 4px !important; border: 2px solid var(--gold); background: var(--surface); box-shadow: 0 10px 0 rgba(0,0,0,.5); }
