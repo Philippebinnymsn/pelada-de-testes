@@ -440,8 +440,7 @@ function renderBoldText(text) {
   );
 }
 
-// Transições de tela: TÚNEL DE VELOCIDADE (lista de presença e escalação) e
-// CORTINA DIAGONAL (cards, regras, canais, PIX e demais pop-ups). A entrada é
+// Transição de tela: CORTINA DIAGONAL em todas as páginas e pop-ups. A entrada é
 // CSS puro; a saída toca a animação (classe no <body>) e só então fecha.
 function fxClose(fn, ms = 420) {
   if (typeof document === "undefined" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
@@ -2245,14 +2244,14 @@ const sortRosterForHome = (players) =>
 const FUT_SIL = (
   <svg viewBox="0 0 84 88" fill="currentColor" aria-hidden="true"><circle cx="42" cy="26" r="17" /><path d="M6 88c2-26 16-34 36-34s34 8 36 34z" /></svg>
 );
-function FutCard({ p, photo, onViewPlayer, style }) {
+function FutCard({ p, photo, onViewPlayer, style, className = "" }) {
   const tone = p.isGK ? "bord" : isMensalista(p) ? "gold" : "silver";
   const tag = p.isGK ? "GOLEIRO" : isMensalista(p) ? "MENSALISTA" : "AVULSO";
   const label = displayName(p);
   return (
             <div
               style={style}
-              className={`fut fut-${tone}`}
+              className={`fut fut-${tone} ${className}`}
               role="button"
               tabIndex={0}
               onClick={() => onViewPlayer && onViewPlayer(p)}
@@ -2302,24 +2301,59 @@ function FutCard({ p, photo, onViewPlayer, style }) {
 function FeaturedCards({ players, onViewPlayer }) {
   const withCover = players.filter((p) => p.cover1 || p.cover2 || p.cover3 || p.cover4 || p.cover5);
   const listKey = withCover.map((p) => p.id).join(",");
-  const entries = React.useMemo(
-    () =>
-      [...withCover]
-        .sort((a, b) => featuredShuffleKey(a.id) - featuredShuffleKey(b.id))
-        .map((p) => ({ player: p, photo: pickRandomCover(p) })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [listKey]
+  const byId = React.useMemo(() => new Map(withCover.map((p) => [p.id, p])), [listKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 3 vagas: cada uma troca de carta sozinha, em horário e jogador aleatórios,
+  // esmaecendo a carta atual e surgindo a nova (sem recarregar o bloco todo).
+  const [slots, setSlots] = useState(() =>
+    [...withCover]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 3)
+      .map((p) => ({ id: p.id, photo: pickRandomCover(p), fading: false }))
   );
-  const pages = [];
-  for (let i = 0; i < entries.length; i += 3) pages.push(entries.slice(i, i + 3));
-  const [page, setPage] = useState(0);
   useEffect(() => {
-    if (pages.length < 2) return;
-    const t = setTimeout(() => setPage((x) => (x + 1) % pages.length), 5000);
-    return () => clearTimeout(t);
-  }, [page, pages.length]);
-  if (!entries.length) return null;
-  const cur = pages[Math.min(page, pages.length - 1)];
+    // a lista de jogadores mudou (carregou/entrou gente): refaz as vagas
+    setSlots(
+      [...withCover]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3)
+        .map((p) => ({ id: p.id, photo: pickRandomCover(p), fading: false }))
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listKey]);
+  const slotsRef = useRef(slots);
+  slotsRef.current = slots;
+  useEffect(() => {
+    if (withCover.length <= 3) return;
+    let alive = true;
+    let t1, t2;
+    const tick = () => {
+      if (!alive) return;
+      const cur = slotsRef.current;
+      const i = Math.floor(Math.random() * cur.length);
+      const shown = new Set(cur.map((x) => x.id));
+      const pool = withCover.filter((p) => !shown.has(p.id));
+      if (pool.length) {
+        setSlots((prev) => prev.map((x, k) => (k === i ? { ...x, fading: true } : x)));
+        t1 = setTimeout(() => {
+          if (!alive) return;
+          const next = pool[Math.floor(Math.random() * pool.length)];
+          setSlots((prev) =>
+            prev.map((x, k) => (k === i ? { id: next.id, photo: pickRandomCover(next), fading: false } : x))
+          );
+        }, 900);
+      }
+      t2 = setTimeout(tick, 2600 + Math.random() * 2600);
+    };
+    t2 = setTimeout(tick, 2200 + Math.random() * 2000);
+    return () => {
+      alive = false;
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listKey]);
+  const cur = slots.filter((x) => byId.has(x.id));
+  if (!cur.length) return null;
   return (
     <div className="fcards-wrap">
       <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true">
@@ -2329,18 +2363,17 @@ function FeaturedCards({ players, onViewPlayer }) {
           </clipPath>
         </defs>
       </svg>
-      <div className="fcards" key={page}>
-        {cur.map(({ player: p, photo }) => {
-          return <FutCard key={p.id} p={p} photo={photo} onViewPlayer={onViewPlayer} />;
-        })}
+      <div className="fcards">
+        {cur.map((x) => (
+          <FutCard
+            key={x.id}
+            p={byId.get(x.id)}
+            photo={x.photo}
+            onViewPlayer={onViewPlayer}
+            className={`fut-slot ${x.fading ? "fut-fading" : ""}`}
+          />
+        ))}
       </div>
-      {pages.length > 1 && (
-        <div className="fcards-dots">
-          {pages.map((_, i) => (
-            <button key={i} type="button" className={i === page ? "on" : ""} onClick={() => setPage(i)} aria-label={`Destaques ${i + 1}`} />
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -5592,7 +5625,7 @@ function EscalacaoBanner({ onOpen, concluded }) {
 function EscalacaoModal({ list, isAdmin, hasPelada, onClose: onCloseProp, onSeePresence, onUnpublish, onViewPlayer }) {
   const onClose = () => fxClose(onCloseProp);
   return (
-    <div className="modal-backdrop fx-tunnel" onClick={onClose}>
+    <div className="modal-backdrop" onClick={onClose}>
       <div className="modal escalacao-modal" onClick={(e) => e.stopPropagation()}>
         <h2 className="modal-title"><Emo e="🔴" /> ESCALAÇÃO DEFINIDA</h2>
 
@@ -12069,24 +12102,38 @@ function Styles() {
       @keyframes fx-tunnel-in { 0% { transform: scale(.1); opacity: 0; } 100% { transform: none; opacity: 1; } }
       @keyframes fx-tunnel-out { 0% { transform: none; opacity: 1; } 100% { transform: scale(.1); opacity: 0; } }
       @keyframes fx-rays { 0% { opacity: 0; transform: scale(.6); } 35% { opacity: 1; } 100% { opacity: 0; transform: scale(2.4); } }
-      .rules-page, .modal-backdrop .modal { animation: fx-curtain-in .55s cubic-bezier(.6,0,.3,1) backwards; }
+      .rules-page, .presence-page, .modal-backdrop .modal { animation: fx-curtain-in .55s cubic-bezier(.6,0,.3,1) backwards; }
       .modal-backdrop .modal.profile-modal, .modal-backdrop .modal { animation-name: fx-curtain-in; }
-      .rules-page::after, .modal-backdrop::after, .presence-page::before, .modal-backdrop.fx-tunnel::before { content: ""; position: fixed; pointer-events: none; z-index: 9999; }
-      .rules-page::after, .modal-backdrop::after { top: -20vh; bottom: -20vh; left: 0; width: 14px; background: linear-gradient(90deg, transparent, #f6d374 30%, #fff 50%, #f6d374 70%, transparent); filter: drop-shadow(0 0 12px #e9b949); animation: fx-line-in .55s cubic-bezier(.6,0,.3,1) backwards; opacity: 0; }
-      body.fx-leaving .rules-page, body.fx-leaving .modal-backdrop .modal { animation: fx-curtain-out .42s cubic-bezier(.6,0,.3,1) both; }
-      body.fx-leaving .rules-page::after, body.fx-leaving .modal-backdrop::after { animation: fx-line-out .42s cubic-bezier(.6,0,.3,1) both; }
-      /* túnel */
-      .presence-page { animation: fx-tunnel-in .55s cubic-bezier(.2,.7,.2,1) backwards; transform-origin: 50% 30%; }
-      .modal-backdrop.fx-tunnel .modal { animation: fx-tunnel-in .55s cubic-bezier(.2,.7,.2,1) backwards; transform-origin: 50% 40%; }
-      .modal-backdrop.fx-tunnel::after { display: none; }
-      .presence-page::before, .modal-backdrop.fx-tunnel::before { inset: 0; opacity: 0; animation: fx-rays .6s ease-out backwards;
-        background: repeating-conic-gradient(from 0deg at 50% 38%, rgba(246,211,116,0) 0 6deg, rgba(246,211,116,.55) 6.4deg 7deg, rgba(246,211,116,0) 7.4deg 14deg);
-        -webkit-mask-image: radial-gradient(circle at 50% 38%, transparent 6%, #000 60%); mask-image: radial-gradient(circle at 50% 38%, transparent 6%, #000 60%); }
-      body.fx-leaving .presence-page, body.fx-leaving .modal-backdrop.fx-tunnel .modal { animation: fx-tunnel-out .42s cubic-bezier(.7,0,.3,1) both; }
-      body.fx-leaving .presence-page::before, body.fx-leaving .modal-backdrop.fx-tunnel::before { animation: fx-rays .42s ease-in both; }
+      .rules-page::after, .presence-page::after, .modal-backdrop::after { content: ""; position: fixed; pointer-events: none; z-index: 9999; }
+      .rules-page::after, .presence-page::after, .modal-backdrop::after { top: -20vh; bottom: -20vh; left: 0; width: 14px; background: linear-gradient(90deg, transparent, #f6d374 30%, #fff 50%, #f6d374 70%, transparent); filter: drop-shadow(0 0 12px #e9b949); animation: fx-line-in .55s cubic-bezier(.6,0,.3,1) backwards; opacity: 0; }
+      body.fx-leaving .rules-page, body.fx-leaving .presence-page, body.fx-leaving .modal-backdrop .modal { animation: fx-curtain-out .42s cubic-bezier(.6,0,.3,1) both; }
+      body.fx-leaving .rules-page::after, body.fx-leaving .presence-page::after, body.fx-leaving .modal-backdrop::after { animation: fx-line-out .42s cubic-bezier(.6,0,.3,1) both; }
       @media (prefers-reduced-motion: reduce) {
-        .rules-page, .presence-page, .modal-backdrop .modal, .rules-page::after, .modal-backdrop::after, .presence-page::before, .modal-backdrop.fx-tunnel::before { animation: none !important; }
+        .rules-page, .presence-page, .modal-backdrop .modal, .rules-page::after, .presence-page::after, .modal-backdrop::after { animation: none !important; }
       }
+      /* destaques: cada vaga troca de carta sozinha, esmaecendo e surgindo suave */
+      .fcards { animation: none; }
+      .fut-slot { transition: opacity .9s ease, transform .9s ease, filter .9s ease; animation: fut-appear 1s ease both; }
+      .fut-slot.fut-fading { opacity: 0; transform: scale(.94) translateY(6px); filter: blur(2px); }
+      @keyframes fut-appear { from { opacity: 0; transform: scale(.94) translateY(6px); } to { opacity: 1; transform: none; } }
+      /* elenco: mais espaço entre foto e nome */
+      .roster-row-main { gap: 20px !important; }
+      .roster-row .avatar { margin-right: 4px; }
+      /* botões LISTA ABERTA / ESCALAÇÃO DEFINIDA +15% */
+      .presence-open-banner { padding: 16px 20px; margin-top: 16px; }
+      .presence-open-banner .presence-open-banner-title { font-size: 30px; }
+      .presence-open-banner .presence-open-banner-cta { font-size: 21px; }
+      .escalacao-banner .presence-open-banner-title { font-size: 27.5px; }
+      .pob-live { font-size: 14px; }
+      .pob-arrow { border-top-width: 9px; border-bottom-width: 9px; border-left-width: 15px; }
+      /* confirmar / cancelar presença: brilho o tempo todo */
+      .presence-my-actions .btn-primary, .presence-my-actions .btn-danger { position: relative; overflow: hidden; }
+      .presence-my-actions .btn-primary::after, .presence-my-actions .btn-danger::after {
+        content: ""; position: absolute; top: 0; bottom: 0; left: -70%; width: 45%; pointer-events: none;
+        background: linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent); transform: skewX(-20deg);
+        animation: btn-shine 2.2s ease-in-out infinite;
+      }
+      @keyframes btn-shine { 0% { left: -70%; } 55%, 100% { left: 140%; } }
       /* perfil: posição + time do coração à esquerda, card da nota menor à direita */
       .profile-stats-2 { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
       .profile-stats-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
