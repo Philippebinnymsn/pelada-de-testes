@@ -5474,6 +5474,7 @@ const EMO_SVG = {
   x: <path d="M6 6l12 12M18 6L6 18" />,
   xc: <><circle cx="12" cy="12" r="9" /><path d="M9 9l6 6M15 9l-6 6" /></>,
   glove: <><path d="M7 13V6.5a1.5 1.5 0 0 1 3 0V11" /><path d="M10 11V4.5a1.5 1.5 0 0 1 3 0V11" /><path d="M13 11V5.5a1.5 1.5 0 0 1 3 0V12" /><path d="M16 12V8.5a1.5 1.5 0 0 1 3 0V15c0 4-2.6 6.5-6.5 6.5S7 19 7 15.5L4.6 12.6a1.5 1.5 0 0 1 2.3-1.9L7 11" /><path d="M8 18h8" /></>,
+  stopwatch: <><circle cx="12" cy="13.5" r="7.5" /><path d="M12 9.5v4l2.5 1.5M9.5 2.5h5M12 2.5V6M18.4 6.3l1.4-1.4" /></>,
   clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   hourglass: <><path d="M6.5 3.5h11M6.5 20.5h11" /><path d="M7.5 3.5c0 4 3 5.5 4.5 8.5-1.5 3-4.5 4.5-4.5 8.5M16.5 3.5c0 4-3 5.5-4.5 8.5 1.5 3 4.5 4.5 4.5 8.5" /></>,
   refresh: <><path d="M20 11a8 8 0 0 0-14.5-4M4 4v4h4" /><path d="M4 13a8 8 0 0 0 14.5 4M20 20v-4h-4" /></>,
@@ -5529,7 +5530,7 @@ const EMO_SVG = {
 };
 const EMO_MAP = {
   "⚽": "ball", "✓": "check", "✔": "check", "✅": "checkc", "✕": "x", "✖": "x", "❌": "xc", "🧤": "glove", "🥅": "glove",
-  "🕐": "clock", "⏰": "clock", "⏳": "hourglass", "🔄": "refresh", "🏅": "medal", "🎖": "medal", "💰": "coin", "🔔": "bell",
+  "🕐": "clock", "⏱": "stopwatch", "⏰": "clock", "⏳": "hourglass", "🔄": "refresh", "🏅": "medal", "🎖": "medal", "💰": "coin", "🔔": "bell",
   "📋": "clip", "🔍": "search", "🎲": "dice", "⚠": "warn", "👑": "crown", "🤝": "together", "📍": "pin", "📌": "pin",
   "📖": "book", "📜": "doc", "💳": "card", "⬆": "up", "⬇": "down", "👇": "down", "📲": "share", "🚫": "ban", "🗓": "cal", "📅": "cal",
   "⚡": "bolt", "📺": "tv", "📷": "camera", "🎥": "video", "🖼": "image", "👤": "user", "⚙": "gear", "➕": "plus", "💬": "chat",
@@ -5765,361 +5766,6 @@ function RulesPage({ onBack }) {
   );
 }
 
-/* =========================================================================
-   CANAIS (leitor de M3U) — cada pessoa coloca a própria lista.
-   O app NÃO fornece, hospeda nem salva nenhuma lista no servidor: tudo fica
-   só no navegador de quem adicionou (localStorage). Use apenas listas e
-   streams que você tem direito de acessar.
-   ========================================================================= */
-const M3U_STORAGE_KEY = "pelada4k.m3u.lists.v1";
-function loadM3uLists() {
-  try {
-    const raw = localStorage.getItem(M3U_STORAGE_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
-}
-function saveM3uLists(lists) {
-  try {
-    localStorage.setItem(M3U_STORAGE_KEY, JSON.stringify(lists));
-    return true;
-  } catch {
-    return false;
-  }
-}
-function parseM3U(text) {
-  const out = [];
-  if (!text) return out;
-  const lines = String(text).split(/\r?\n/);
-  let cur = null;
-  const attr = (s, k) => {
-    const m = s.match(new RegExp(k + '="([^"]*)"', "i"));
-    return m ? m[1].trim() : "";
-  };
-  for (let raw of lines) {
-    const line = raw.trim();
-    if (!line) continue;
-    if (line.startsWith("#EXTINF")) {
-      const comma = line.lastIndexOf(",");
-      const title = comma >= 0 ? line.slice(comma + 1).trim() : "";
-      cur = {
-        name: title || attr(line, "tvg-name") || "Sem nome",
-        group: attr(line, "group-title") || "Sem grupo",
-        logo: attr(line, "tvg-logo"),
-      };
-    } else if (line.startsWith("#EXTGRP:")) {
-      if (cur) cur.group = line.slice(8).trim() || cur.group;
-    } else if (!line.startsWith("#")) {
-      if (/^(https?:|rtmp:|rtsp:)/i.test(line) || cur) {
-        out.push({ name: cur?.name || line, group: cur?.group || "Sem grupo", logo: cur?.logo || "", url: line });
-      }
-      cur = null;
-    }
-  }
-  return out;
-}
-let hlsLoadPromise = null;
-function loadHlsLib() {
-  if (typeof window === "undefined") return Promise.reject(new Error("no window"));
-  if (window.Hls) return Promise.resolve(window.Hls);
-  if (hlsLoadPromise) return hlsLoadPromise;
-  hlsLoadPromise = new Promise((resolve, reject) => {
-    const s = document.createElement("script");
-    s.src = "https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js";
-    s.onload = () => resolve(window.Hls);
-    s.onerror = () => {
-      hlsLoadPromise = null;
-      reject(new Error("hls load failed"));
-    };
-    document.head.appendChild(s);
-  });
-  return hlsLoadPromise;
-}
-
-const STREAM_PROXY = (import.meta.env.VITE_STREAM_PROXY || "").replace(/\/+$/, "");
-function proxied(url) {
-  return STREAM_PROXY ? `${STREAM_PROXY}/?u=${encodeURIComponent(url)}` : url;
-}
-
-function ChannelPlayer({ channel, onClose }) {
-  const videoRef = useRef(null);
-  const [status, setStatus] = useState("loading"); // loading | playing | error
-  const pageIsHttps = typeof window !== "undefined" && window.location.protocol === "https:";
-  const needsProxy = !!STREAM_PROXY && pageIsHttps && /^http:\/\//i.test(channel?.url || "");
-  // 1ª tentativa direta (ou já pelo proxy se o link é http://); se falhar e há proxy, tenta 1x pelo proxy
-  const [useProxy, setUseProxy] = useState(needsProxy);
-  useEffect(() => {
-    setUseProxy(needsProxy);
-  }, [channel?.url, needsProxy]);
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !channel) return;
-    let hls = null;
-    let cancelled = false;
-    setStatus("loading");
-    const url = useProxy ? proxied(channel.url) : channel.url;
-    const fail = () => {
-      if (cancelled) return;
-      if (STREAM_PROXY && !useProxy) setUseProxy(true);
-      else setStatus("error");
-    };
-    const onPlaying = () => !cancelled && setStatus("playing");
-    video.addEventListener("playing", onPlaying);
-    video.addEventListener("error", fail);
-    const isHls = /\.m3u8(\?|$)/i.test(channel.url) || /\/hls\//i.test(channel.url);
-    if (isHls && !video.canPlayType("application/vnd.apple.mpegurl")) {
-      loadHlsLib()
-        .then((Hls) => {
-          if (cancelled) return;
-          if (!Hls || !Hls.isSupported()) return fail();
-          hls = new Hls({ enableWorker: true, lowLatencyMode: true });
-          hls.on(Hls.Events.ERROR, (_e, data) => {
-            if (data?.fatal) fail();
-          });
-          hls.loadSource(url);
-          hls.attachMedia(video);
-          video.play().catch(() => {});
-        })
-        .catch(fail);
-    } else {
-      video.src = url;
-      video.play().catch(() => {});
-    }
-    return () => {
-      cancelled = true;
-      video.removeEventListener("playing", onPlaying);
-      video.removeEventListener("error", fail);
-      if (hls) hls.destroy();
-      video.removeAttribute("src");
-      video.load();
-    };
-  }, [channel?.url, useProxy]);
-  if (!channel) return null;
-  const insecure = /^http:\/\//i.test(channel.url) && pageIsHttps;
-  return (
-    <div className="ch-player">
-      <div className="ch-player-head">
-        <span className="ch-player-title">{channel.name}</span>
-        <button className="ch-x" onClick={onClose} aria-label="Fechar player"><Emo e="✕" /></button>
-      </div>
-      <video ref={videoRef} className="ch-video" controls playsInline autoPlay />
-      {status === "loading" && <p className="ch-note">Carregando…</p>}
-      {status === "error" && (
-        <p className="ch-note ch-note-err">
-          Não foi possível reproduzir este canal.{" "}
-          {insecure
-            ? STREAM_PROXY
-              ? "Mesmo pelo desbloqueador https não foi possível abrir este canal (pode estar fora do ar)."
-              : "O link é http:// e o navegador bloqueia em página https://."
-            : "O servidor pode bloquear o acesso pelo navegador (CORS), estar fora do ar ou usar um formato não suportado."}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function ChannelsPage({ onBack }) {
-  const [lists, setLists] = useState(() => loadM3uLists());
-  const [activeId, setActiveId] = useState(() => loadM3uLists()[0]?.id || null);
-  const [showAdd, setShowAdd] = useState(() => loadM3uLists().length === 0);
-  const [addName, setAddName] = useState("");
-  const [addUrl, setAddUrl] = useState("");
-  const [addText, setAddText] = useState("");
-  const [addErr, setAddErr] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [query, setQuery] = useState("");
-  const [group, setGroup] = useState("");
-  const [limit, setLimit] = useState(120);
-  const [playing, setPlaying] = useState(null);
-  const [saveWarn, setSaveWarn] = useState(false);
-
-  const active = lists.find((l) => l.id === activeId) || null;
-  const channels = React.useMemo(() => (active ? parseM3U(active.text) : []), [active?.id, active?.text]);
-  const groups = React.useMemo(() => {
-    const m = new Map();
-    channels.forEach((c) => m.set(c.group, (m.get(c.group) || 0) + 1));
-    return [...m.entries()];
-  }, [channels]);
-  const filtered = React.useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return channels.filter((c) => (!group || c.group === group) && (!q || c.name.toLowerCase().includes(q)));
-  }, [channels, query, group]);
-
-  const persist = (next) => {
-    setLists(next);
-    setSaveWarn(!saveM3uLists(next));
-  };
-  const addList = async () => {
-    setAddErr("");
-    let text = addText.trim();
-    const url = addUrl.trim();
-    if (!text && !url) {
-      setAddErr("Cole o link da lista, o texto dela ou escolha um arquivo.");
-      return;
-    }
-    if (!text && url) {
-      setBusy(true);
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("http " + res.status);
-        text = await res.text();
-      } catch {
-        setBusy(false);
-        setAddErr("Não consegui baixar esse link (o servidor pode bloquear o acesso pelo navegador). Abra o link, copie o texto e cole aqui, ou envie o arquivo.");
-        return;
-      }
-      setBusy(false);
-    }
-    const parsed = parseM3U(text);
-    if (parsed.length === 0) {
-      setAddErr("Não encontrei canais nesse conteúdo. Confira se é uma lista M3U/M3U8.");
-      return;
-    }
-    const item = {
-      id: String(Date.now()),
-      name: addName.trim() || (url ? url.split("/").pop().split("?")[0] : "Minha lista"),
-      url: url || "",
-      text,
-      count: parsed.length,
-    };
-    const next = [...lists, item];
-    persist(next);
-    setActiveId(item.id);
-    setShowAdd(false);
-    setAddName("");
-    setAddUrl("");
-    setAddText("");
-    setGroup("");
-    setQuery("");
-    setLimit(120);
-  };
-  const onFile = (e) => {
-    const f = e.target.files && e.target.files[0];
-    if (!f) return;
-    const r = new FileReader();
-    r.onload = () => {
-      setAddText(String(r.result || ""));
-      if (!addName) setAddName(f.name.replace(/\.[^.]+$/, ""));
-    };
-    r.readAsText(f);
-  };
-  const removeList = (id) => {
-    if (!window.confirm("Remover esta lista do seu aparelho?")) return;
-    const next = lists.filter((l) => l.id !== id);
-    persist(next);
-    if (activeId === id) {
-      setActiveId(next[0]?.id || null);
-      setPlaying(null);
-    }
-  };
-
-  return (
-    <div className="rules-page ch-page">
-      <div className="rules-page-header">
-        <button className="hero-icon-btn" onClick={onBack} aria-label="Voltar">
-          ‹
-        </button>
-        <h1 className="rules-page-title">CANAIS</h1>
-      </div>
-      <div className="rules-page-body">
-        <p className="ch-disclaimer">
-          Leitor de listas M3U. O app não fornece nem guarda canais: a lista fica só neste aparelho. Use apenas listas e
-          transmissões que você tem direito de acessar.
-        </p>
-
-        {saveWarn && <p className="ch-note ch-note-err">Não deu para salvar a lista neste aparelho (espaço cheio ou modo privado).</p>}
-
-        {lists.length > 0 && (
-          <div className="ch-lists">
-            {lists.map((l) => (
-              <button
-                key={l.id}
-                className={`ch-list-chip${l.id === activeId ? " is-on" : ""}`}
-                onClick={() => {
-                  setActiveId(l.id);
-                  setGroup("");
-                  setQuery("");
-                  setLimit(120);
-                  setPlaying(null);
-                }}
-              >
-                {l.name} <span className="ch-chip-count">{l.count}</span>
-              </button>
-            ))}
-            <button className="ch-list-chip ch-list-add" onClick={() => setShowAdd((v) => !v)}>
-              + Adicionar lista
-            </button>
-          </div>
-        )}
-
-        {showAdd && (
-          <div className="ch-add">
-            <input className="input" placeholder="Nome da lista (opcional)" value={addName} onChange={(e) => setAddName(e.target.value)} />
-            <input className="input" placeholder="Link da lista (.m3u / .m3u8)" value={addUrl} onChange={(e) => setAddUrl(e.target.value)} />
-            <p className="ch-or">ou cole o conteúdo da lista</p>
-            <textarea className="input ch-textarea" placeholder="#EXTM3U ..." value={addText} onChange={(e) => setAddText(e.target.value)} />
-            <p className="ch-or">ou envie o arquivo</p>
-            <input type="file" accept=".m3u,.m3u8,.txt,text/plain,audio/x-mpegurl,application/vnd.apple.mpegurl" onChange={onFile} />
-            {addErr && <p className="ch-note ch-note-err">{addErr}</p>}
-            <div className="ch-add-actions">
-              <button className="btn btn-primary" disabled={busy} onClick={addList}>
-                {busy ? "BAIXANDO…" : "ADICIONAR LISTA"}
-              </button>
-              {lists.length > 0 && (
-                <button className="btn btn-ghost" onClick={() => setShowAdd(false)}>
-                  CANCELAR
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {playing && <ChannelPlayer channel={playing} onClose={() => setPlaying(null)} />}
-
-        {active && (
-          <>
-            <div className="ch-toolbar">
-              <input className="input" placeholder="Buscar canal…" value={query} onChange={(e) => { setQuery(e.target.value); setLimit(120); }} />
-              <select className="input" value={group} onChange={(e) => { setGroup(e.target.value); setLimit(120); }}>
-                <option value="">Todos os grupos ({channels.length})</option>
-                {groups.map(([g, n]) => (
-                  <option key={g} value={g}>
-                    {g} ({n})
-                  </option>
-                ))}
-              </select>
-              <button className="ch-remove" onClick={() => removeList(active.id)}>
-                Remover esta lista
-              </button>
-            </div>
-            <ul className="ch-list">
-              {filtered.slice(0, limit).map((c, i) => (
-                <li key={c.url + i}>
-                  <button className={`ch-row${playing?.url === c.url ? " is-on" : ""}`} onClick={() => { setPlaying(c); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
-                    {c.logo ? <img className="ch-logo" src={c.logo} alt="" loading="lazy" onError={(e) => (e.currentTarget.style.visibility = "hidden")} /> : <span className="ch-logo ch-logo-ph">▶</span>}
-                    <span className="ch-row-main">
-                      <span className="ch-row-name">{c.name}</span>
-                      <span className="ch-row-group">{c.group}</span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            {filtered.length === 0 && <p className="ch-note">Nenhum canal encontrado.</p>}
-            {filtered.length > limit && (
-              <button className="btn btn-ghost btn-block" onClick={() => setLimit((n) => n + 120)}>
-                MOSTRAR MAIS ({filtered.length - limit})
-              </button>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default function PeladaApp() {
   const [players, setPlayers] = useState([]);
   const [ready, setReady] = useState(false);
@@ -6152,6 +5798,7 @@ export default function PeladaApp() {
   const [presencesExtra, setPresencesExtra] = useState([]);
   const [showPresenceListModal, setShowPresenceListModal] = useState(false);
   const [showEscalacaoModal, setShowEscalacaoModal] = useState(false);
+  const [showStopwatch, setShowStopwatch] = useState(false);
   const [showPublishPelada, setShowPublishPelada] = useState(false);
   const [showPublishPeladaExtra, setShowPublishPeladaExtra] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -6202,21 +5849,6 @@ export default function PeladaApp() {
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
-  // Canais (leitor de M3U): página própria no hash #canais
-  const [showChannelsPage, setShowChannelsPage] = useState(
-    () => typeof window !== "undefined" && window.location.hash === "#canais"
-  );
-  useEffect(() => {
-    const onHashChange = () => setShowChannelsPage(window.location.hash === "#canais");
-    window.addEventListener("hashchange", onHashChange);
-    return () => window.removeEventListener("hashchange", onHashChange);
-  }, []);
-  const openChannelsPage = () => {
-    window.location.hash = "canais";
-  };
-  const closeChannelsPage = () => {
-    if (window.location.hash === "#canais") fxClose(() => { window.location.hash = ""; });
-  };
   const openRulesPage = () => {
     window.location.hash = "regras";
   };
@@ -8994,15 +8626,6 @@ export default function PeladaApp() {
     return true;
   })();
 
-  if (showChannelsPage) {
-    return (
-      <div className="pelada-root">
-        <Styles />
-        <ChannelsPage onBack={closeChannelsPage} />
-      </div>
-    );
-  }
-
   if (showRulesPage) {
     return (
       <div className="pelada-root">
@@ -9391,6 +9014,7 @@ export default function PeladaApp() {
           <img src={LOGO_DATA_URL} alt="Pelada" className="logo-crest" />
         </button>
         <div className="topbar-flare" aria-hidden="true" />
+        <span className="topbar-flare-reflex" aria-hidden="true" />
         <span className="topbar-caption">PELADA 4K OFICIAL</span>
         <span className="topbar-season">TEMPORADA 2026</span>
       </header>
@@ -9694,6 +9318,8 @@ export default function PeladaApp() {
             />
           )}
 
+          {showStopwatch && <StopwatchModal onClose={() => setShowStopwatch(false)} />}
+
           {showEscalacaoModal && publishedList && (
             <EscalacaoModal
               list={publishedList}
@@ -9735,8 +9361,8 @@ export default function PeladaApp() {
             <Emo e="📖" /> REGRAS DA PELADA 4K
           </button>
 
-          <button className="btn btn-ghost btn-block" onClick={openChannelsPage}>
-            <Emo e="📺" /> CANAIS (MINHA LISTA M3U)
+          <button className="btn btn-ghost btn-block" onClick={() => setShowStopwatch(true)}>
+            <Emo e="⏱" /> CRONÔMETRO
           </button>
 
           {isAdmin && (
@@ -10426,6 +10052,166 @@ export default function PeladaApp() {
       )}
 
       <footer className="app-footer">App criado e desenvolvido por Philippe Norman</footer>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================================
+   CRONÔMETRO — placar eletrônico de estádio (7 min decrescentes por padrão)
+   ========================================================================= */
+const SEG_ON = {
+  0: "abcdef", 1: "bc", 2: "abged", 3: "abgcd", 4: "fgbc", 5: "afgcd", 6: "afgedc", 7: "abc", 8: "abcdefg", 9: "abcdfg",
+};
+const SEG_POLY = {
+  a: "12,5 48,5 42,13 18,13", b: "57,9 49,17 49,44 57,48", c: "57,52 49,56 49,83 57,91",
+  d: "12,95 48,95 42,87 18,87", e: "3,52 11,56 11,83 3,91", f: "3,9 11,17 11,44 3,48",
+  g: "10,50 17,44 43,44 50,50 43,56 17,56",
+};
+function SevenSeg({ n }) {
+  const on = SEG_ON[n] || "";
+  return (
+    <svg className="sb-digit" viewBox="0 0 60 100" aria-hidden="true">
+      {Object.keys(SEG_POLY).map((k) => (
+        <polygon key={k} points={SEG_POLY[k]} className={on.includes(k) ? "sb-seg sb-on" : "sb-seg"} />
+      ))}
+    </svg>
+  );
+}
+function StopwatchModal({ onClose: onCloseProp }) {
+  const [minutes, setMinutes] = useState(7);
+  const totalMs = minutes * 60000;
+  const [remaining, setRemaining] = useState(totalMs);
+  const [running, setRunning] = useState(false);
+  const [finished, setFinished] = useState(false);
+  const endRef = useRef(0);
+  const audioRef = useRef(null);
+  const lockRef = useRef(null);
+  const onClose = () => {
+    stopAlarm();
+    releaseLock();
+    fxClose(onCloseProp);
+  };
+  function getAudio() {
+    if (!audioRef.current) {
+      const a = new Audio(`${import.meta.env.BASE_URL || "/"}alarm.mp3`);
+      a.preload = "auto";
+      audioRef.current = a;
+    }
+    return audioRef.current;
+  }
+  function stopAlarm() {
+    const a = audioRef.current;
+    if (a) {
+      a.pause();
+      a.currentTime = 0;
+    }
+  }
+  async function takeLock() {
+    try {
+      if (navigator.wakeLock) lockRef.current = await navigator.wakeLock.request("screen");
+    } catch {}
+  }
+  function releaseLock() {
+    try {
+      lockRef.current?.release();
+    } catch {}
+    lockRef.current = null;
+  }
+  useEffect(() => () => {
+    stopAlarm();
+    releaseLock();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!running) return undefined;
+    const id = setInterval(() => {
+      const left = Math.max(0, endRef.current - Date.now());
+      setRemaining(left);
+      if (left <= 0) {
+        clearInterval(id);
+        setRunning(false);
+        setFinished(true);
+        releaseLock();
+        try {
+          const a = getAudio();
+          a.muted = false;
+          a.currentTime = 0;
+          a.play().catch(() => {});
+          navigator.vibrate?.([300, 150, 300, 150, 600]);
+        } catch {}
+      }
+    }, 100);
+    return () => clearInterval(id);
+  }, [running]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const start = () => {
+    // destrava o áudio no iPhone (precisa nascer de um toque do usuário)
+    try {
+      const a = getAudio();
+      a.muted = true;
+      a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => { a.muted = false; });
+    } catch {}
+    endRef.current = Date.now() + remaining;
+    setFinished(false);
+    setRunning(true);
+    takeLock();
+  };
+  const pause = () => {
+    setRemaining(Math.max(0, endRef.current - Date.now()));
+    setRunning(false);
+    releaseLock();
+  };
+  const reset = () => {
+    stopAlarm();
+    releaseLock();
+    setRunning(false);
+    setFinished(false);
+    setRemaining(totalMs);
+  };
+  const changeMinutes = (d) => {
+    const m = Math.min(60, Math.max(1, minutes + d));
+    setMinutes(m);
+    setRemaining(m * 60000);
+  };
+  const secs = Math.ceil(remaining / 1000);
+  const mm = String(Math.floor(secs / 60)).padStart(2, "0");
+  const ss = String(secs % 60).padStart(2, "0");
+  const warning = running && secs <= 10 && secs > 0;
+  const idle = !running && !finished && remaining === totalMs;
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal sb-modal" onClick={(e) => e.stopPropagation()}>
+        <h2 className="modal-title"><Emo e="⏱" /> Cronômetro</h2>
+        <div className={`sb-board ${warning ? "sb-warn" : ""} ${finished ? "sb-done" : ""}`}>
+          {warning && <div key={secs} className="sb-flash" />}
+          <div className="sb-lamps"><i /><i /><i /><i /></div>
+          <div className={`sb-digits ${finished ? "sb-blink" : ""}`} role="timer" aria-label={`${mm} minutos e ${ss} segundos`}>
+            <SevenSeg n={Number(mm[0])} />
+            <SevenSeg n={Number(mm[1])} />
+            <div className={`sb-colon ${running ? "sb-colon-run" : ""}`}><i /><i /></div>
+            <SevenSeg n={Number(ss[0])} />
+            <SevenSeg n={Number(ss[1])} />
+          </div>
+          <div className="sb-caption">{finished ? "TEMPO ESGOTADO" : running ? "EM JOGO" : idle ? `${minutes} MIN` : "PAUSADO"}</div>
+        </div>
+        {idle && (
+          <div className="sb-adjust">
+            <button className="btn btn-ghost" onClick={() => changeMinutes(-1)} aria-label="Menos um minuto">− 1 MIN</button>
+            <button className="btn btn-ghost" onClick={() => changeMinutes(1)} aria-label="Mais um minuto">+ 1 MIN</button>
+          </div>
+        )}
+        <div className="sb-actions">
+          {finished ? (
+            <button className="btn btn-primary" onClick={reset}>REINICIAR</button>
+          ) : running ? (
+            <button className="btn btn-primary" onClick={pause}>PAUSAR</button>
+          ) : (
+            <button className="btn btn-primary" onClick={start}>INICIAR</button>
+          )}
+          <button className="btn btn-ghost" onClick={reset}>RESET</button>
+        </div>
+        <button className="link profile-close-link" onClick={onClose}>Fechar</button>
       </div>
     </div>
   );
@@ -12102,15 +11888,15 @@ function Styles() {
       /* ===== transições: cortina diagonal (padrão) e túnel de velocidade (lista/escalação) ===== */
       @keyframes fx-curtain-in { from { clip-path: polygon(0 0,0 0,-30% 100%,-30% 100%); } to { clip-path: polygon(0 0,140% 0,110% 100%,-30% 100%); } }
       @keyframes fx-curtain-out { from { clip-path: polygon(0 0,140% 0,110% 100%,-30% 100%); } to { clip-path: polygon(0 0,0 0,-30% 100%,-30% 100%); } }
-      @keyframes fx-line-in { from { transform: translateX(-30vw) skewX(-20deg); opacity: 1; } to { transform: translateX(130vw) skewX(-20deg); opacity: 1; } }
-      @keyframes fx-line-out { from { transform: translateX(130vw) skewX(-20deg); opacity: 1; } to { transform: translateX(-30vw) skewX(-20deg); opacity: 1; } }
+      @keyframes fx-line-in { from { background-position: 0% 0; opacity: 1; } to { background-position: 100% 0; opacity: 1; } }
+      @keyframes fx-line-out { from { background-position: 100% 0; opacity: 1; } to { background-position: 0% 0; opacity: 1; } }
       @keyframes fx-tunnel-in { 0% { transform: scale(.1); opacity: 0; } 100% { transform: none; opacity: 1; } }
       @keyframes fx-tunnel-out { 0% { transform: none; opacity: 1; } 100% { transform: scale(.1); opacity: 0; } }
       @keyframes fx-rays { 0% { opacity: 0; transform: scale(.6); } 35% { opacity: 1; } 100% { opacity: 0; transform: scale(2.4); } }
       .rules-page, .presence-page, .modal-backdrop .modal { animation: fx-curtain-in .55s cubic-bezier(.6,0,.3,1) backwards; }
       .modal-backdrop .modal.profile-modal, .modal-backdrop .modal { animation-name: fx-curtain-in; }
       .rules-page::after, .presence-page::after, .modal-backdrop::after { content: ""; position: fixed; pointer-events: none; z-index: 9999; }
-      .rules-page::after, .presence-page::after, .modal-backdrop::after { top: -20vh; bottom: -20vh; left: 0; width: 14px; background: linear-gradient(90deg, transparent, #f6d374 30%, #fff 50%, #f6d374 70%, transparent); filter: drop-shadow(0 0 12px #e9b949); animation: fx-line-in .55s cubic-bezier(.6,0,.3,1) backwards; opacity: 0; }
+      .rules-page::after, .presence-page::after, .modal-backdrop::after { inset: 0; width: auto; height: auto; overflow: hidden; opacity: 0; background-image: linear-gradient(90deg, transparent, #f6d374 30%, #fff 50%, #f6d374 70%, transparent); background-repeat: no-repeat; background-size: 18px 100%; background-position: 0 0; filter: drop-shadow(0 0 12px #e9b949); animation: fx-line-in .55s cubic-bezier(.6,0,.3,1) backwards; }
       body.fx-leaving .rules-page, body.fx-leaving .presence-page, body.fx-leaving .modal-backdrop .modal { animation: fx-curtain-out .42s cubic-bezier(.6,0,.3,1) both; }
       body.fx-leaving .rules-page::after, body.fx-leaving .presence-page::after, body.fx-leaving .modal-backdrop::after { animation: fx-line-out .42s cubic-bezier(.6,0,.3,1) both; }
       @media (prefers-reduced-motion: reduce) {
@@ -12191,37 +11977,6 @@ function Styles() {
       .modal { border-radius: 4px !important; border: 2px solid var(--gold); background: var(--surface); box-shadow: 0 10px 0 rgba(0,0,0,.5); }
       .modal-title { font-family: 'Anton','Barlow Condensed',sans-serif; text-transform: uppercase; letter-spacing: 1px; }
       .modal-backdrop { background: rgba(8,8,10,.72); }
-      /* ===== CANAIS (M3U) ===== */
-      .ch-disclaimer { font-size: 12px; color: var(--text-dim); margin: 0 0 14px; line-height: 1.45; }
-      .ch-lists { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-      .ch-list-chip { background: var(--surface); color: var(--text); border: none; border-left: 4px solid var(--gold); padding: 8px 14px; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: .8px; text-transform: uppercase; cursor: pointer; clip-path: polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%); transition: filter .15s ease, translate .15s ease; }
-      .ch-list-chip:hover { filter: brightness(1.15); translate: 0 -2px; }
-      .ch-list-chip.is-on { background: linear-gradient(90deg,#f6d374,#c8962a); color: #2a1a02; }
-      .ch-list-add { border-left-color: var(--maroon-light); }
-      .ch-chip-count { opacity: .7; font-size: 12px; margin-left: 4px; }
-      .ch-add { display: flex; flex-direction: column; gap: 8px; background: var(--surface); border-left: 6px solid var(--gold); padding: 14px; margin-bottom: 14px; }
-      .ch-textarea { min-height: 96px; resize: vertical; font-family: monospace; font-size: 12px; }
-      .ch-or { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); margin: 2px 0; }
-      .ch-add-actions { display: flex; gap: 8px; margin-top: 4px; }
-      .ch-toolbar { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
-      .ch-remove { background: none; border: none; color: var(--maroon-light); font-size: 12px; text-align: right; cursor: pointer; padding: 2px 0; }
-      .ch-list { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-      .ch-row { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; background: var(--surface); color: var(--text); border: none; border-left: 6px solid var(--gold); padding: 8px 14px 8px 10px; cursor: pointer; clip-path: polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%); transition: filter .15s ease, translate .15s ease; }
-      .ch-row:hover { filter: brightness(1.15); translate: 4px 0; }
-      .ch-row:active { translate: 2px 2px; filter: brightness(.9); }
-      .ch-row.is-on { background: linear-gradient(100deg,#a3183a,#6b0f26); }
-      .ch-logo { width: 38px; height: 38px; object-fit: contain; flex: none; background: rgba(255,255,255,.06); }
-      .ch-logo-ph { display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 14px; }
-      .ch-row-main { display: flex; flex-direction: column; min-width: 0; }
-      .ch-row-name { font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 18px; letter-spacing: .5px; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .ch-row-group { font-size: 11px; color: var(--text-dim); letter-spacing: .5px; text-transform: uppercase; }
-      .ch-player { background: #000; border-left: 6px solid var(--gold); margin-bottom: 14px; position: sticky; top: 0; z-index: 5; }
-      .ch-player-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--surface); }
-      .ch-player-title { font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 18px; text-transform: uppercase; color: var(--gold); }
-      .ch-x { background: none; border: none; color: var(--text); font-size: 16px; cursor: pointer; }
-      .ch-video { width: 100%; max-height: 56vh; background: #000; display: block; }
-      .ch-note { font-size: 12.5px; color: var(--text-dim); margin: 8px 12px; line-height: 1.45; }
-      .ch-note-err { color: var(--alert); }
 
       /* ===== LAYOUT FIFA/PES (mockup N-Carvão) ===== */
       /* topo: logo grande centralizado, flare dourado, título e temporada */
@@ -12424,15 +12179,50 @@ function Styles() {
       .pob-live { font-size: 12px; }
       .pob-arrow { border-top-width: 8px; border-bottom-width: 8px; border-left-width: 13px; margin-left: 8px; }
 
-      /* canais: nada pode alargar a página além da tela (nomes longos de canal, aviso de erro) */
-      .rules-page { max-width: 100vw; overflow-x: hidden; }
-      .rules-page-body, .ch-lists, .ch-toolbar, .ch-list, .ch-list > li, .ch-player, .ch-player-head { min-width: 0; max-width: 100%; box-sizing: border-box; }
-      .ch-row { min-width: 0; max-width: 100%; box-sizing: border-box; }
-      .ch-row-main { flex: 1; min-width: 0; }
-      .ch-row-name, .ch-row-group { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .ch-player-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .ch-note, .ch-disclaimer { overflow-wrap: anywhere; }
-      .ch-video { max-width: 100%; }
+      .rules-page { max-width: 100%; overflow-x: clip; }
+
+      /* ===== CRONÔMETRO: placar eletrônico ===== */
+      .sb-modal { max-width: 440px; }
+      .sb-board { position: relative; overflow: hidden; background: #131417; border: 3px solid #2c2e33; border-radius: 6px; padding: 16px 12px 12px;
+        box-shadow: inset 0 0 40px rgba(0,0,0,.8), inset 0 0 0 2px #0a0a0b, 0 6px 0 rgba(0,0,0,.5);
+        background-image: radial-gradient(rgba(255,255,255,.035) 1px, transparent 1.4px); background-size: 6px 6px; }
+      .sb-lamps { display: flex; justify-content: space-between; padding: 0 4px 10px; }
+      .sb-lamps i { width: 7px; height: 7px; border-radius: 50%; background: #3a3000; box-shadow: inset 0 0 2px #000; }
+      .sb-digits { display: flex; align-items: center; justify-content: center; gap: 2.5%; }
+      .sb-digit { width: 19%; height: auto; overflow: visible; }
+      .sb-seg { fill: #2a2400; opacity: .9; }
+      .sb-seg.sb-on { fill: #ffe44d; opacity: 1; filter: drop-shadow(0 0 3px #ffd400) drop-shadow(0 0 9px rgba(255,196,0,.95)); }
+      .sb-colon { display: flex; flex-direction: column; justify-content: center; gap: 22px; padding: 0 1%; }
+      .sb-colon i { width: 11px; height: 11px; background: #ffe44d; border-radius: 2px; box-shadow: 0 0 4px #ffd400, 0 0 12px rgba(255,196,0,.95); }
+      .sb-colon-run i { animation: sb-colon 1s steps(1) infinite; }
+      @keyframes sb-colon { 50% { opacity: .15; } }
+      .sb-caption { text-align: center; margin-top: 10px; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; letter-spacing: 6px; font-size: 14px; color: #ffe44d; text-shadow: 0 0 8px rgba(255,196,0,.8); }
+      .sb-flash { position: absolute; inset: 0; z-index: 3; pointer-events: none; background: radial-gradient(circle at 50% 45%, rgba(255,228,77,.55), rgba(255,140,0,.25) 60%, transparent 85%); animation: sb-flash 1s ease-out forwards; }
+      @keyframes sb-flash { 0% { opacity: 1; } 100% { opacity: 0; } }
+      .sb-warn { animation: sb-pulse 1s ease-out infinite; }
+      @keyframes sb-pulse { 0% { box-shadow: inset 0 0 40px rgba(0,0,0,.8), 0 0 0 0 rgba(255,214,0,.9), 0 6px 0 rgba(0,0,0,.5); } 100% { box-shadow: inset 0 0 40px rgba(0,0,0,.8), 0 0 0 18px rgba(255,214,0,0), 0 6px 0 rgba(0,0,0,.5); } }
+      .sb-warn .sb-seg.sb-on { filter: drop-shadow(0 0 4px #ffb300) drop-shadow(0 0 14px rgba(255,160,0,1)); }
+      .sb-done { animation: sb-alarm .7s steps(1) infinite; }
+      @keyframes sb-alarm { 0%, 100% { background-color: #131417; } 50% { background-color: #3a0f0f; } }
+      .sb-blink { animation: sb-blink .6s steps(1) infinite; }
+      @keyframes sb-blink { 0%, 100% { opacity: 1; filter: brightness(1.6); } 50% { opacity: .08; filter: none; } }
+      .sb-adjust { display: flex; gap: 10px; margin-top: 12px; }
+      .sb-adjust .btn { flex: 1; font-size: 15px; padding: 10px; }
+      .sb-actions { display: flex; gap: 10px; margin-top: 14px; }
+      .sb-actions .btn { flex: 1; }
+      @media (prefers-reduced-motion: reduce) { .sb-warn, .sb-flash { animation: none; } }
+
+      /* linha entre o logo e "PELADA 4K OFICIAL": brilho e reflexo leves */
+      .topbar-flare { width: 150px !important; overflow: visible; animation: flare-glow 3.2s ease-in-out infinite; }
+      .topbar-flare::before { content: ""; position: absolute; left: 0; right: 0; top: 3px; height: 2px;
+        background: linear-gradient(90deg, transparent 0%, transparent 35%, rgba(255,255,255,.95) 50%, transparent 65%, transparent 100%);
+        background-size: 220% 100%; background-position: 160% 0; filter: blur(.4px); animation: flare-sweep 3.2s ease-in-out infinite; }
+      .topbar-flare::after { animation: flare-diamond 3.2s ease-in-out infinite; }
+      @keyframes flare-sweep { 0% { background-position: 160% 0; } 55%, 100% { background-position: -60% 0; } }
+      @keyframes flare-glow { 0%, 100% { filter: drop-shadow(0 0 2px rgba(233,185,73,.5)); } 50% { filter: drop-shadow(0 0 7px rgba(255,236,170,.9)); } }
+      @keyframes flare-diamond { 0%, 100% { box-shadow: 0 0 8px #e9b949; } 50% { box-shadow: 0 0 16px 3px #fff3c4; } }
+      .topbar-flare-reflex { display: block; width: 110px; height: 6px; margin: -2px auto 4px; opacity: .3; filter: blur(2.5px);
+        background: radial-gradient(ellipse at 50% 0%, rgba(233,185,73,.9), transparent 70%); }
 `}</style>
   );
 }
