@@ -12423,6 +12423,16 @@ function Styles() {
       .escalacao-banner .presence-open-banner-title { font-size: 23.4px; }
       .pob-live { font-size: 12px; }
       .pob-arrow { border-top-width: 8px; border-bottom-width: 8px; border-left-width: 13px; margin-left: 8px; }
+
+      /* canais: nada pode alargar a página além da tela (nomes longos de canal, aviso de erro) */
+      .rules-page { max-width: 100vw; overflow-x: hidden; }
+      .rules-page-body, .ch-lists, .ch-toolbar, .ch-list, .ch-list > li, .ch-player, .ch-player-head { min-width: 0; max-width: 100%; box-sizing: border-box; }
+      .ch-row { min-width: 0; max-width: 100%; box-sizing: border-box; }
+      .ch-row-main { flex: 1; min-width: 0; }
+      .ch-row-name, .ch-row-group { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .ch-player-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .ch-note, .ch-disclaimer { overflow-wrap: anywhere; }
+      .ch-video { max-width: 100%; }
 `}</style>
   );
 }
