@@ -5463,7 +5463,7 @@ function AdminToolbar({
       count: suggestionsCount,
     },
     { key: "admins", icon: emo("👑"), label: "Administradores", onClick: onAdminControl },
-    { key: "stopwatch", icon: emo("⏱"), label: "Cronômetro (abrir)", onClick: onStopwatch },
+    { key: "stopwatch", icon: emo("⏱"), label: "Cronômetro (publicar na home)", onClick: onStopwatch },
     hasPelada && {
       key: "delete",
       icon: emo("🗑️"),
@@ -5845,7 +5845,7 @@ export default function PeladaApp() {
   const swPush = usePushAlert(authUser);
   const [, setClk] = useState(0);
   useEffect(() => { const id = setInterval(() => setClk((n) => n + 1), 20000); return () => clearInterval(id); }, []);
-  const swBannerOn = !!authUser && isStopwatchWindowBRT() && sw.hiddenDate !== todayBRT();
+  const swBannerOn = !!authUser && (sw.publishedDate === todayBRT() || (isStopwatchWindowBRT() && sw.hiddenDate !== todayBRT()));
   const loadAttendance = async () => {
     try {
       const { data } = await supabase.rpc("attendance_stats");
@@ -9297,7 +9297,7 @@ export default function PeladaApp() {
               mensalistaCount={mensalistaList.length}
               onPaymentControl={() => setShowPaymentControl(true)}
               onAdminControl={() => setShowAdminControl(true)}
-              onStopwatch={() => setShowStopwatch(true)}
+              onStopwatch={() => { sw.actions.publish(); setShowStopwatch(true); }}
               onAnnouncement={() => setShowAnnouncementAdmin(true)}
               onFinance={openFinance}
               onSuggestions={openSuggestions}
@@ -10279,6 +10279,7 @@ const rowToStopwatch = (r) => r && ({
   remainingMs: Number(r.remaining_ms ?? 420000),
   startedBy: r.started_by || null,
   hiddenDate: r.hidden_date || null,
+  publishedDate: r.published_date || null,
   lastBy: r.last_by || null,
   history: Array.isArray(r.history) ? r.history : [],
   updatedAt: r.updated_at,
@@ -10407,11 +10408,12 @@ function useSharedStopwatch(authUser, actor) {
     },
     pause: () => write({ status: "paused", remaining_ms: Math.round(remaining) }, "Pausado"),
     reset: () => { stopAlarm(); return write({ status: "idle", remaining_ms: dur * 60000, started_by: null }, "Resetado"); },
-    hideToday: () => write({ hidden_date: todayBRT() }, null),
+    hideToday: () => write({ hidden_date: todayBRT(), published_date: null }, null),
+    publish: () => write({ published_date: todayBRT(), hidden_date: null }, null),
     setMinutes: (m) => write({ status: "idle", duration_min: m, remaining_ms: m * 60000, started_by: null }, null),
   };
   return { loaded: !!row, st, remaining, running, finished, idle: st === "idle", durationMin: dur,
-    startedBy: row?.startedBy, hiddenDate: row?.hiddenDate || null, history: row?.history || [], unlockAudio, stopAlarm, actions };
+    startedBy: row?.startedBy, hiddenDate: row?.hiddenDate || null, publishedDate: row?.publishedDate || null, history: row?.history || [], unlockAudio, stopAlarm, actions };
 }
 
 function StopwatchModal({ sw, push, isAdmin, onHide, onClose: onCloseProp }) {
@@ -12616,6 +12618,16 @@ function Styles() {
       @keyframes pg-swing { 0%,100% { transform: rotate(-14deg); } 50% { transform: rotate(14deg); } }
       .sec-title .emo { animation: pg-spin-slow 9s linear infinite; transform-origin: 50% 50%; }
       .interest-cta-btn .emo { transform-origin: 50% 8%; animation: pg-swing 2.2s ease-in-out infinite; }
+
+      /* banner do cronômetro: dourado escuro em degradê + faixa pontilhada (igual aos popups) */
+      .presence-open-banner .pob-left { padding-left: 12px; }
+      .stopwatch-banner { background: linear-gradient(165deg, #8a6418 0%, #4a340c 48%, #1d1407 100%) !important; border-left-color: var(--gold) !important; position: relative; }
+      .stopwatch-banner::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 9px; pointer-events: none; background: repeating-linear-gradient(135deg, #000 0 9px, var(--gold) 9px 18px); }
+      .stopwatch-banner .pob-in { padding-top: 9px; }
+      .stopwatch-banner .presence-open-banner-title { color: #fff !important; }
+      .stopwatch-banner .presence-open-banner-cta { color: #ffe58a !important; }
+      .stopwatch-banner .pob-live { color: #f0cc3c; background: none !important; -webkit-text-fill-color: #f0cc3c; }
+      .stopwatch-banner .sw-by { color: rgba(255,255,255,.6); }
 `}</style>
   );
 }
