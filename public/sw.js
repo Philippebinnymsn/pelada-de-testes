@@ -3,7 +3,7 @@
 // atualização. Imagens (raramente mudam) usam cache primeiro, atualizando
 // por trás, pra abrir rápido mesmo com internet ruim no campo. Se a rede
 // cair de vez, tudo cai de volta pro que já está salvo no aparelho.
-const CACHE_VERSION = "pelada-v3";
+const CACHE_VERSION = "pelada-v4";
 const STATIC_ASSETS = [
   "/manifest.json",
   "/favicon.png",
@@ -87,8 +87,9 @@ self.addEventListener("push", (event) => {
       body: data.body || "TEMPO ESGOTADO!",
       icon: "/assets/icon-192.png",
       badge: "/assets/icon-192.png",
-      tag: "cronometro",
+      tag: data.tag || "cronometro",
       renotify: true,
+      silent: false,
       requireInteraction: true,
       vibrate: [300, 150, 300, 150, 600],
     })
