@@ -5799,6 +5799,8 @@ export default function PeladaApp() {
   const [showPresenceListModal, setShowPresenceListModal] = useState(false);
   const [showEscalacaoModal, setShowEscalacaoModal] = useState(false);
   const [showStopwatch, setShowStopwatch] = useState(false);
+  const [swActor, setSwActor] = useState("Alguém");
+  const sw = useSharedStopwatch(authUser, swActor);
   const [showPublishPelada, setShowPublishPelada] = useState(false);
   const [showPublishPeladaExtra, setShowPublishPeladaExtra] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -6324,6 +6326,9 @@ export default function PeladaApp() {
 
   // Card vinculado à conta atualmente logada (se houver)
   const myPlayer = authUser ? players.find((p) => p.userId === authUser.id) ?? null : null;
+  useEffect(() => {
+    setSwActor(myPlayer ? displayName(myPlayer) : authUser?.email ? authUser.email.split("@")[0] : "Alguém");
+  }, [myPlayer?.id, myPlayer?.nickname, myPlayer?.name, authUser?.email]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Assim que um admin vincula o login a um card, quem estiver com o app
   // aberto vê isso chegar em tempo real (canal "players-public" acima) — daí
@@ -9318,7 +9323,8 @@ export default function PeladaApp() {
             />
           )}
 
-          {showStopwatch && <StopwatchModal onClose={() => setShowStopwatch(false)} />}
+          {authUser && <StopwatchBanner sw={sw} onOpen={() => setShowStopwatch(true)} />}
+          {authUser && showStopwatch && <StopwatchModal sw={sw} onClose={() => setShowStopwatch(false)} />}
 
           {showEscalacaoModal && publishedList && (
             <EscalacaoModal
@@ -9359,10 +9365,6 @@ export default function PeladaApp() {
 
           <button className="btn btn-ghost btn-block" onClick={openRulesPage}>
             <Emo e="📖" /> REGRAS DA PELADA 4K
-          </button>
-
-          <button className="btn btn-ghost btn-block" onClick={() => setShowStopwatch(true)}>
-            <Emo e="⏱" /> CRONÔMETRO
           </button>
 
           {isAdmin && (
@@ -10078,107 +10080,156 @@ function SevenSeg({ n }) {
     </svg>
   );
 }
-function StopwatchModal({ onClose: onCloseProp }) {
-  const [minutes, setMinutes] = useState(7);
-  const totalMs = minutes * 60000;
-  const [remaining, setRemaining] = useState(totalMs);
-  const [running, setRunning] = useState(false);
-  const [finished, setFinished] = useState(false);
-  const endRef = useRef(0);
+const STOPWATCH_ID = "00000000-0000-0000-0000-000000000003";
+const rowToStopwatch = (r) => r && ({
+  status: r.status || "idle",
+  durationMin: r.duration_min || 7,
+  remainingMs: Number(r.remaining_ms ?? 420000),
+  startedBy: r.started_by || null,
+  lastBy: r.last_by || null,
+  history: Array.isArray(r.history) ? r.history : [],
+  updatedAt: r.updated_at,
+});
+
+// Estado do cronômetro compartilhado (tempo real). `authUser` null => nada carrega.
+function useSharedStopwatch(authUser, actor) {
+  const [row, setRow] = useState(null);
+  const [, setTick] = useState(0);
+  const offsetRef = useRef(0); // relógio do servidor - relógio local
   const audioRef = useRef(null);
   const lockRef = useRef(null);
-  const onClose = () => {
-    stopAlarm();
-    releaseLock();
-    fxClose(onCloseProp);
-  };
-  function getAudio() {
+  const wasFinishedRef = useRef(null);
+  const uid = authUser?.id || null;
+
+  const getAudio = () => {
     if (!audioRef.current) {
       const a = new Audio(`${import.meta.env.BASE_URL || "/"}alarm.mp3`);
       a.preload = "auto";
       audioRef.current = a;
     }
     return audioRef.current;
-  }
-  function stopAlarm() {
-    const a = audioRef.current;
-    if (a) {
-      a.pause();
-      a.currentTime = 0;
-    }
-  }
-  async function takeLock() {
-    try {
-      if (navigator.wakeLock) lockRef.current = await navigator.wakeLock.request("screen");
-    } catch {}
-  }
-  function releaseLock() {
-    try {
-      lockRef.current?.release();
-    } catch {}
-    lockRef.current = null;
-  }
-  useEffect(() => () => {
-    stopAlarm();
-    releaseLock();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (!running) return undefined;
-    const id = setInterval(() => {
-      const left = Math.max(0, endRef.current - Date.now());
-      setRemaining(left);
-      if (left <= 0) {
-        clearInterval(id);
-        setRunning(false);
-        setFinished(true);
-        releaseLock();
-        try {
-          const a = getAudio();
-          a.muted = false;
-          a.currentTime = 0;
-          a.play().catch(() => {});
-          navigator.vibrate?.([300, 150, 300, 150, 600]);
-        } catch {}
-      }
-    }, 100);
-    return () => clearInterval(id);
-  }, [running]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const start = () => {
-    // destrava o áudio no iPhone (precisa nascer de um toque do usuário)
+  };
+  // precisa nascer de um toque do usuário (iPhone)
+  const unlockAudio = () => {
     try {
       const a = getAudio();
+      if (!a.paused) return;
       a.muted = true;
       a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => { a.muted = false; });
     } catch {}
-    endRef.current = Date.now() + remaining;
-    setFinished(false);
-    setRunning(true);
-    takeLock();
   };
-  const pause = () => {
-    setRemaining(Math.max(0, endRef.current - Date.now()));
-    setRunning(false);
-    releaseLock();
+  const stopAlarm = () => {
+    const a = audioRef.current;
+    if (a) { a.pause(); a.currentTime = 0; }
   };
-  const reset = () => {
-    stopAlarm();
-    releaseLock();
-    setRunning(false);
-    setFinished(false);
-    setRemaining(totalMs);
+
+  useEffect(() => {
+    if (!uid) { setRow(null); return undefined; }
+    let alive = true;
+    (async () => {
+      try {
+        const t0 = Date.now();
+        const { data: sn } = await supabase.rpc("server_now");
+        if (sn) offsetRef.current = Date.parse(sn) - (t0 + Date.now()) / 2;
+      } catch {}
+      const { data } = await supabase.from("stopwatch_state").select("*").eq("id", STOPWATCH_ID).maybeSingle();
+      if (alive && data) setRow(rowToStopwatch(data));
+    })();
+    const channel = supabase
+      .channel("stopwatch-shared")
+      .on("postgres_changes", { event: "*", schema: "public", table: "stopwatch_state", filter: `id=eq.${STOPWATCH_ID}` },
+        (payload) => { if (payload.new) setRow(rowToStopwatch(payload.new)); })
+      .subscribe();
+    return () => { alive = false; supabase.removeChannel(channel); };
+  }, [uid]);
+
+  const serverNow = () => Date.now() + offsetRef.current;
+  const st = row?.status || "idle";
+  const endAt = st === "running" && row ? Date.parse(row.updatedAt) + row.remainingMs : 0;
+  const remaining = !row ? 420000 : st === "running" ? Math.max(0, endAt - serverNow()) : st === "idle" ? row.durationMin * 60000 : row.remainingMs;
+  const running = st === "running" && remaining > 0;
+  const finished = st === "running" && remaining <= 0;
+
+  // relógio (100ms) só enquanto corre
+  useEffect(() => {
+    if (st !== "running") return undefined;
+    const id = setInterval(() => setTick((n) => n + 1), 100);
+    return () => clearInterval(id);
+  }, [st, row?.updatedAt]);
+
+  // tela acesa durante o jogo
+  useEffect(() => {
+    if (!running) { try { lockRef.current?.release(); } catch {} lockRef.current = null; return undefined; }
+    (async () => { try { if (navigator.wakeLock && !lockRef.current) lockRef.current = await navigator.wakeLock.request("screen"); } catch {} })();
+    return undefined;
+  }, [running]);
+
+  // alarme em todos os aparelhos quando acaba (só se acabou agora, não ao abrir o app depois)
+  useEffect(() => {
+    if (wasFinishedRef.current === null) { wasFinishedRef.current = finished; return; }
+    if (finished && !wasFinishedRef.current && serverNow() - endAt < 20000) {
+      try {
+        const a = getAudio();
+        a.muted = false; a.currentTime = 0; a.play().catch(() => {});
+        navigator.vibrate?.([300, 150, 300, 150, 600]);
+      } catch {}
+    }
+    if (!finished) stopAlarm();
+    wasFinishedRef.current = finished;
+  }, [finished]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function write(patch, entry) {
+    const cur = row || { status: "idle", durationMin: 7, remainingMs: 420000, startedBy: null, history: [] };
+    let history = cur.history;
+    if (entry) {
+      const base = history.length >= 3 ? [] : history; // zera a cada 3 modificações
+      history = [...base, { a: entry, by: actor, at: new Date().toISOString() }];
+    }
+    const next = {
+      id: STOPWATCH_ID,
+      status: cur.status,
+      duration_min: cur.durationMin,
+      remaining_ms: cur.remainingMs,
+      started_by: cur.startedBy,
+      last_by: actor,
+      history,
+      ...patch,
+    };
+    const { data, error } = await supabase.from("stopwatch_state").upsert(next).select().single();
+    if (!error && data) {
+      setRow(rowToStopwatch(data));
+      offsetRef.current = Date.parse(data.updated_at) - Date.now();
+    }
+    return !error;
+  }
+  const dur = row?.durationMin || 7;
+  const actions = {
+    start: () => {
+      unlockAudio();
+      const fromIdle = st === "idle" || finished;
+      return write(
+        { status: "running", remaining_ms: fromIdle ? dur * 60000 : remaining, started_by: fromIdle ? actor : row?.startedBy },
+        fromIdle ? "Iniciado" : "Retomado"
+      );
+    },
+    pause: () => write({ status: "paused", remaining_ms: Math.round(remaining) }, "Pausado"),
+    reset: () => { stopAlarm(); return write({ status: "idle", remaining_ms: dur * 60000, started_by: null }, "Resetado"); },
+    setMinutes: (m) => write({ status: "idle", duration_min: m, remaining_ms: m * 60000, started_by: null }, null),
   };
-  const changeMinutes = (d) => {
-    const m = Math.min(60, Math.max(1, minutes + d));
-    setMinutes(m);
-    setRemaining(m * 60000);
-  };
+  return { loaded: !!row, st, remaining, running, finished, idle: st === "idle", durationMin: dur,
+    startedBy: row?.startedBy, history: row?.history || [], unlockAudio, stopAlarm, actions };
+}
+
+function StopwatchModal({ sw, onClose: onCloseProp }) {
+  const [busy, setBusy] = useState(false);
+  const onClose = () => { fxClose(onCloseProp); };
+  const act = async (fn) => { if (busy) return; setBusy(true); try { await fn(); } finally { setBusy(false); } };
+  const { remaining, running, finished, idle, durationMin } = sw;
   const secs = Math.ceil(remaining / 1000);
   const mm = String(Math.floor(secs / 60)).padStart(2, "0");
   const ss = String(secs % 60).padStart(2, "0");
   const warning = running && secs <= 10 && secs > 0;
-  const idle = !running && !finished && remaining === totalMs;
+  const fmtAt = (iso) => { try { return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }); } catch { return ""; } };
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal sb-modal" onClick={(e) => e.stopPropagation()}>
@@ -10193,27 +10244,53 @@ function StopwatchModal({ onClose: onCloseProp }) {
             <SevenSeg n={Number(ss[0])} />
             <SevenSeg n={Number(ss[1])} />
           </div>
-          <div className="sb-caption">{finished ? "TEMPO ESGOTADO" : running ? "EM JOGO" : idle ? `${minutes} MIN` : "PAUSADO"}</div>
+          <div className="sb-caption">{finished ? "TEMPO ESGOTADO" : running ? "EM JOGO" : idle ? `${durationMin} MIN` : "PAUSADO"}</div>
         </div>
+        <div className="sb-by">{sw.startedBy && !idle ? `iniciado por ${sw.startedBy}` : " "}</div>
         {idle && (
           <div className="sb-adjust">
-            <button className="btn btn-ghost" onClick={() => changeMinutes(-1)} aria-label="Menos um minuto">− 1 MIN</button>
-            <button className="btn btn-ghost" onClick={() => changeMinutes(1)} aria-label="Mais um minuto">+ 1 MIN</button>
+            <button className="btn btn-ghost" disabled={busy} onClick={() => act(() => sw.actions.setMinutes(Math.max(1, durationMin - 1)))} aria-label="Menos um minuto">− 1 MIN</button>
+            <button className="btn btn-ghost" disabled={busy} onClick={() => act(() => sw.actions.setMinutes(Math.min(60, durationMin + 1)))} aria-label="Mais um minuto">+ 1 MIN</button>
           </div>
         )}
         <div className="sb-actions">
           {finished ? (
-            <button className="btn btn-primary" onClick={reset}>REINICIAR</button>
+            <button className="btn btn-primary" disabled={busy} onClick={() => act(sw.actions.reset)}>REINICIAR</button>
           ) : running ? (
-            <button className="btn btn-primary" onClick={pause}>PAUSAR</button>
+            <button className="btn btn-primary" disabled={busy} onClick={() => act(sw.actions.pause)}>PAUSAR</button>
           ) : (
-            <button className="btn btn-primary" onClick={start}>INICIAR</button>
+            <button className="btn btn-primary" disabled={busy} onClick={() => act(sw.actions.start)}>{sw.st === "paused" ? "RETOMAR" : "INICIAR"}</button>
           )}
-          <button className="btn btn-ghost" onClick={reset}>RESET</button>
+          <button className="btn btn-ghost" disabled={busy} onClick={() => act(sw.actions.reset)}>RESET</button>
         </div>
+        {sw.history.length > 0 && (
+          <ul className="sb-history" aria-label="Histórico">
+            {[...sw.history].reverse().map((h, i) => (
+              <li key={`${h.at}-${i}`}>{h.a} por <b>{h.by}</b> · {fmtAt(h.at)}</li>
+            ))}
+          </ul>
+        )}
         <button className="link profile-close-link" onClick={onClose}>Fechar</button>
       </div>
     </div>
+  );
+}
+
+function StopwatchBanner({ sw, onOpen }) {
+  const secs = Math.ceil(sw.remaining / 1000);
+  const t = `${String(Math.floor(secs / 60)).padStart(2, "0")}:${String(secs % 60).padStart(2, "0")}`;
+  const live = sw.running || sw.finished;
+  return (
+    <button className={`presence-open-banner stopwatch-banner ${live ? "" : "sw-idle"}`} onClick={() => { sw.unlockAudio(); onOpen(); }}>
+      <span className="pob-in">
+        <span className="pob-left">
+          {live ? <span className="pob-live"><i className="pob-dot" />AO VIVO</span> : <span className="pob-live">PLACAR ELETRÔNICO</span>}
+          <span className="presence-open-banner-title">CRONÔMETRO</span>
+          {live && sw.startedBy && <span className="sw-by">iniciado por {sw.startedBy}</span>}
+        </span>
+        <span className="presence-open-banner-cta">{sw.finished ? "00:00" : sw.st !== "idle" ? t : "ACESSE AQUI"}<i className="pob-arrow" /></span>
+      </span>
+    </button>
   );
 }
 
@@ -12223,6 +12300,13 @@ function Styles() {
       @keyframes flare-diamond { 0%, 100% { box-shadow: 0 0 8px #e9b949; } 50% { box-shadow: 0 0 16px 3px #fff3c4; } }
       .topbar-flare-reflex { display: block; width: 110px; height: 6px; margin: -2px auto 4px; opacity: .3; filter: blur(2.5px);
         background: radial-gradient(ellipse at 50% 0%, rgba(233,185,73,.9), transparent 70%); }
+
+      /* ===== CRONÔMETRO compartilhado ===== */
+      .sb-by { text-align: center; font-size: 10px; letter-spacing: .6px; color: var(--text-dim); margin-top: 6px; min-height: 14px; text-transform: lowercase; }
+      .sb-history { list-style: none; margin: 12px 0 0; padding: 8px 10px; border-left: 2px solid var(--gold-dark); background: rgba(255,255,255,.03); font-size: 11px; color: var(--text-dim); display: flex; flex-direction: column; gap: 3px; }
+      .sb-history b { color: var(--text); font-weight: 600; }
+      .sw-by { font-family: 'Inter',sans-serif; font-style: normal; font-weight: 500; font-size: 9.5px; letter-spacing: .5px; color: #6b6b6b; text-transform: lowercase; margin-top: 2px; }
+      .stopwatch-banner.sw-idle .pob-live { letter-spacing: 2px; }
 `}</style>
   );
 }
