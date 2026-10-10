@@ -440,6 +440,22 @@ function renderBoldText(text) {
   );
 }
 
+// Transições de tela: TÚNEL DE VELOCIDADE (lista de presença e escalação) e
+// CORTINA DIAGONAL (cards, regras, canais, PIX e demais pop-ups). A entrada é
+// CSS puro; a saída toca a animação (classe no <body>) e só então fecha.
+function fxClose(fn, ms = 420) {
+  if (typeof document === "undefined" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    fn();
+    return;
+  }
+  if (document.body.classList.contains("fx-leaving")) return;
+  document.body.classList.add("fx-leaving");
+  setTimeout(() => {
+    document.body.classList.remove("fx-leaving");
+    fn();
+  }, ms);
+}
+
 const clampRating = (n) => Math.min(10, Math.max(1, Math.round(n)));
 
 const starsFilled = (rating) => Math.min(5, Math.max(1, Math.round(rating / 2)));
@@ -2058,8 +2074,9 @@ function PlayerHeroPhotos({ player }) {
   );
 }
 
-function ProfileModal({ player, onClose, onEdit, isAdmin, canEditOwn, phone }) {
+function ProfileModal({ player, onClose: onCloseProp, onEdit, isAdmin, canEditOwn, phone }) {
   if (!player) return null;
+  const onClose = () => fxClose(onCloseProp);
   const canEdit = isAdmin || canEditOwn;
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -2096,13 +2113,40 @@ function ProfileModal({ player, onClose, onEdit, isAdmin, canEditOwn, phone }) {
 
         <div className="profile-panel">
           <MembershipBadge player={player} className="membership-badge-profile" />
-          <div className="profile-stats">
+          <div className="profile-stats profile-stats-2">
+            <div className="profile-stats-left">
             <div className="profile-stat">
               <span className="profile-stat-value">{player.position || "—"}</span>
               <span className="profile-stat-label">Posição</span>
             </div>
-            <div className="profile-stat">
-              <span className="profile-stat-value">{player.rating}/10</span>
+              {player.favoriteTeam && (
+                <div className="profile-fav-team">
+                  <FavoriteTeamBadge name={player.favoriteTeam} size={32} />
+                  <div className="profile-fav-team-text">
+                    <span className="profile-fav-team-label">Time do coração</span>
+                    <span className="profile-fav-team-name">{player.favoriteTeam}</span>
+                  </div>
+                </div>
+              )}
+
+            </div>
+            <div className="profile-stat profile-stat-nota">
+              <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true">
+                <defs>
+                  <clipPath id="futp" clipPathUnits="objectBoundingBox">
+                    <path d="M0.10,0 L0.90,0 Q1,0 1,0.07 L1,0.80 Q1,0.90 0.80,0.945 L0.5,1 L0.20,0.945 Q0,0.90 0,0.80 L0,0.07 Q0,0 0.10,0 Z" />
+                  </clipPath>
+                </defs>
+              </svg>
+              <div className={`fut nota-card fut-${player.isGK ? "bord" : isMensalista(player) ? "gold" : "silver"}`}>
+                <div className="fut-o">
+                  <div className="fut-i">
+                    <div className="nota-n">{player.rating}</div>
+                    <div className="nota-p">{posCode(player.position)}</div>
+                    <div className="fut-glass" />
+                  </div>
+                </div>
+              </div>
               <span className="profile-stat-label">Nota</span>
             </div>
           </div>
@@ -2113,16 +2157,6 @@ function ProfileModal({ player, onClose, onEdit, isAdmin, canEditOwn, phone }) {
               <a href={`tel:${phone.replace(/[^\d+]/g, "")}`} className="profile-admin-contact-value">
                 {phone}
               </a>
-            </div>
-          )}
-
-          {player.favoriteTeam && (
-            <div className="profile-fav-team">
-              <FavoriteTeamBadge name={player.favoriteTeam} size={32} />
-              <div className="profile-fav-team-text">
-                <span className="profile-fav-team-label">Time do coração</span>
-                <span className="profile-fav-team-name">{player.favoriteTeam}</span>
-              </div>
             </div>
           )}
 
@@ -5516,7 +5550,7 @@ function GroupTitle({ kind, children }) {
 
 // Banner grande e animado — chama atenção pra pelada aberta sem já jogar o
 // conteúdo inteiro da lista na tela.
-function PresenceOpenBanner({ onOpen, title = "LISTA ABERTA", cta = "ACESSE AQUI ▶", className = "" }) {
+function PresenceOpenBanner({ onOpen, title = "LISTA ABERTA", cta = "ACESSE AQUI", className = "" }) {
   return (
     <button className={`presence-open-banner ${className}`} onClick={onOpen}>
       <span className="pob-in">
@@ -5524,7 +5558,7 @@ function PresenceOpenBanner({ onOpen, title = "LISTA ABERTA", cta = "ACESSE AQUI
           <span className="pob-live"><i className="pob-dot" />AO VIVO</span>
           <span className="presence-open-banner-title">{title}</span>
         </span>
-        <span className="presence-open-banner-cta">{cta}</span>
+        <span className="presence-open-banner-cta">{cta}<i className="pob-arrow" /></span>
       </span>
     </button>
   );
@@ -5541,7 +5575,7 @@ function EscalacaoBanner({ onOpen, concluded }) {
     >
       <span className="pob-in">
         <span className="pob-left"><span className="presence-open-banner-title">ESCALAÇÃO DEFINIDA</span></span>
-        <span className="presence-open-banner-cta">ACESSE AQUI ▶</span>
+        <span className="presence-open-banner-cta">ACESSE AQUI<i className="pob-arrow" /></span>
       </span>
       {concluded && (
         <span className="escalacao-banner-concluded-note">
@@ -5555,9 +5589,10 @@ function EscalacaoBanner({ onOpen, concluded }) {
 
 // Pop-up com a escalação sorteada — times bem separados, com o resumo de
 // equilíbrio embaixo. Clicar no nome de alguém abre o card dela.
-function EscalacaoModal({ list, isAdmin, hasPelada, onClose, onSeePresence, onUnpublish, onViewPlayer }) {
+function EscalacaoModal({ list, isAdmin, hasPelada, onClose: onCloseProp, onSeePresence, onUnpublish, onViewPlayer }) {
+  const onClose = () => fxClose(onCloseProp);
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop fx-tunnel" onClick={onClose}>
       <div className="modal escalacao-modal" onClick={(e) => e.stopPropagation()}>
         <h2 className="modal-title"><Emo e="🔴" /> ESCALAÇÃO DEFINIDA</h2>
 
@@ -6142,13 +6177,13 @@ export default function PeladaApp() {
     window.location.hash = "canais";
   };
   const closeChannelsPage = () => {
-    if (window.location.hash === "#canais") window.location.hash = "";
+    if (window.location.hash === "#canais") fxClose(() => { window.location.hash = ""; });
   };
   const openRulesPage = () => {
     window.location.hash = "regras";
   };
   const closeRulesPage = () => {
-    if (window.location.hash === "#regras") window.location.hash = "";
+    if (window.location.hash === "#regras") fxClose(() => { window.location.hash = ""; });
   };
 
   // Lista de presença: também é página própria (mesmo esquema de hash da
@@ -6173,7 +6208,7 @@ export default function PeladaApp() {
     window.scrollTo(0, 0);
   };
   const closePresenceListPage = () => {
-    if (window.location.hash === "#lista") window.location.hash = "";
+    if (window.location.hash === "#lista") fxClose(() => { window.location.hash = ""; });
   };
 
   // Mesmo esquema, pra página da pelada extra (#lista-extra).
@@ -6194,7 +6229,7 @@ export default function PeladaApp() {
     window.scrollTo(0, 0);
   };
   const closeExtraPresenceListPage = () => {
-    if (window.location.hash === "#lista-extra") window.location.hash = "";
+    if (window.location.hash === "#lista-extra") fxClose(() => { window.location.hash = ""; });
   };
 
   // Depois de criar a conta, manda a pessoa direto pra home (fecha qualquer
@@ -9575,7 +9610,7 @@ export default function PeladaApp() {
             <PresenceOpenBanner
               onOpen={openExtraPresenceListPage}
               title="LISTA - PELADA EXTRA"
-              cta="ACESSE AQUI ▶"
+              cta="ACESSE AQUI"
               className="extra-banner"
             />
           )}
@@ -9684,7 +9719,7 @@ export default function PeladaApp() {
               {rosterDisplayList.map((p) => (
                 <li key={p.id} className="roster-row" onClick={() => setViewPlayer(p)}>
                   <div className="roster-row-main">
-                    <Avatar player={p} shape="square" size={68} />
+                    <Avatar player={p} shape="round" size={58} />
                     <div className="roster-info">
                       <span className="roster-name">{displayName(p)}</span>
                       {p.nickname && <span className="roster-fullname">{p.name}</span>}
@@ -9694,7 +9729,7 @@ export default function PeladaApp() {
                       {p.instagram && <InstagramLink handle={p.instagram} className="roster-instagram" />}
                       <MembershipBadge player={p} className="membership-badge-roster" short />
                     </div>
-                    <div className="rating-badge">
+                    <div className={`rating-badge rb-${p.isGK ? "bord" : isMensalista(p) ? "gold" : "silver"}`}>
                       <span className="rating-badge-num">{p.rating}</span>
                       <span className="rating-badge-label">{posCode(p.position)}</span>
                     </div>
@@ -12016,6 +12051,73 @@ function Styles() {
       .profile-hero-scrim { background: linear-gradient(180deg, rgba(10,9,8,0) 30%, rgba(10,9,8,.35) 55%, rgba(10,9,8,.78) 80%, rgba(10,9,8,.96) 100%); }
       .profile-hero-name-row .avatar { border-radius: 50% !important; }
       .profile-hero-name-text { font-family: 'Anton','Barlow Condensed',sans-serif; text-transform: uppercase; }
+      .modal.profile-modal { border: 0 !important; box-shadow: 0 18px 40px rgba(0,0,0,.6) !important; background: #000 !important; border-radius: 18px !important; }
+      .profile-hero { border-radius: 18px 18px 0 0; background: #000; }
+      .profile-hero-scrim { background: linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,.4) 55%, rgba(0,0,0,.82) 80%, #000 100%); }
+      .profile-panel { background: #000; }
+      .nota-card { width: 84px !important; flex: none; margin: 0 auto 6px; filter: drop-shadow(0 4px 6px rgba(0,0,0,.5)); }
+      .nota-n { position: absolute; left: 0; right: 0; top: 17cqw; text-align: center; font-family: 'Anton',sans-serif; font-size: 44cqw; line-height: 1; }
+      .nota-p { position: absolute; left: 0; right: 0; top: 66cqw; text-align: center; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 15cqw; letter-spacing: 1.5cqw; }
+      .profile-stat-nota { display: flex; flex-direction: column; align-items: center; }
+      /* grupos da lista: goleiros bordô, confirmados dourado, avulsos prata, ausentes cinza escuro */
+
+      /* ===== transições: cortina diagonal (padrão) e túnel de velocidade (lista/escalação) ===== */
+      @keyframes fx-curtain-in { from { clip-path: polygon(0 0,0 0,-30% 100%,-30% 100%); } to { clip-path: polygon(0 0,140% 0,110% 100%,-30% 100%); } }
+      @keyframes fx-curtain-out { from { clip-path: polygon(0 0,140% 0,110% 100%,-30% 100%); } to { clip-path: polygon(0 0,0 0,-30% 100%,-30% 100%); } }
+      @keyframes fx-line-in { from { transform: translateX(-30vw) skewX(-20deg); opacity: 1; } to { transform: translateX(130vw) skewX(-20deg); opacity: 1; } }
+      @keyframes fx-line-out { from { transform: translateX(130vw) skewX(-20deg); opacity: 1; } to { transform: translateX(-30vw) skewX(-20deg); opacity: 1; } }
+      @keyframes fx-tunnel-in { 0% { transform: scale(.1); opacity: 0; } 100% { transform: none; opacity: 1; } }
+      @keyframes fx-tunnel-out { 0% { transform: none; opacity: 1; } 100% { transform: scale(.1); opacity: 0; } }
+      @keyframes fx-rays { 0% { opacity: 0; transform: scale(.6); } 35% { opacity: 1; } 100% { opacity: 0; transform: scale(2.4); } }
+      .rules-page, .modal-backdrop .modal { animation: fx-curtain-in .55s cubic-bezier(.6,0,.3,1) backwards; }
+      .modal-backdrop .modal.profile-modal, .modal-backdrop .modal { animation-name: fx-curtain-in; }
+      .rules-page::after, .modal-backdrop::after, .presence-page::before, .modal-backdrop.fx-tunnel::before { content: ""; position: fixed; pointer-events: none; z-index: 9999; }
+      .rules-page::after, .modal-backdrop::after { top: -20vh; bottom: -20vh; left: 0; width: 14px; background: linear-gradient(90deg, transparent, #f6d374 30%, #fff 50%, #f6d374 70%, transparent); filter: drop-shadow(0 0 12px #e9b949); animation: fx-line-in .55s cubic-bezier(.6,0,.3,1) backwards; opacity: 0; }
+      body.fx-leaving .rules-page, body.fx-leaving .modal-backdrop .modal { animation: fx-curtain-out .42s cubic-bezier(.6,0,.3,1) both; }
+      body.fx-leaving .rules-page::after, body.fx-leaving .modal-backdrop::after { animation: fx-line-out .42s cubic-bezier(.6,0,.3,1) both; }
+      /* túnel */
+      .presence-page { animation: fx-tunnel-in .55s cubic-bezier(.2,.7,.2,1) backwards; transform-origin: 50% 30%; }
+      .modal-backdrop.fx-tunnel .modal { animation: fx-tunnel-in .55s cubic-bezier(.2,.7,.2,1) backwards; transform-origin: 50% 40%; }
+      .modal-backdrop.fx-tunnel::after { display: none; }
+      .presence-page::before, .modal-backdrop.fx-tunnel::before { inset: 0; opacity: 0; animation: fx-rays .6s ease-out backwards;
+        background: repeating-conic-gradient(from 0deg at 50% 38%, rgba(246,211,116,0) 0 6deg, rgba(246,211,116,.55) 6.4deg 7deg, rgba(246,211,116,0) 7.4deg 14deg);
+        -webkit-mask-image: radial-gradient(circle at 50% 38%, transparent 6%, #000 60%); mask-image: radial-gradient(circle at 50% 38%, transparent 6%, #000 60%); }
+      body.fx-leaving .presence-page, body.fx-leaving .modal-backdrop.fx-tunnel .modal { animation: fx-tunnel-out .42s cubic-bezier(.7,0,.3,1) both; }
+      body.fx-leaving .presence-page::before, body.fx-leaving .modal-backdrop.fx-tunnel::before { animation: fx-rays .42s ease-in both; }
+      @media (prefers-reduced-motion: reduce) {
+        .rules-page, .presence-page, .modal-backdrop .modal, .rules-page::after, .modal-backdrop::after, .presence-page::before, .modal-backdrop.fx-tunnel::before { animation: none !important; }
+      }
+      /* perfil: posição + time do coração à esquerda, card da nota menor à direita */
+      .profile-stats-2 { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+      .profile-stats-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+      .profile-stats-left .profile-stat { align-items: flex-start; text-align: left; }
+      .profile-stats-left .profile-fav-team { margin: 0; padding: 0; background: none; border: 0; }
+      .nota-card { width: 62px !important; margin: 0 auto 4px; }
+      /* elenco: foto redonda à esquerda, nota em mini card no fim da barra */
+      .roster-row .rating-badge { order: 2; margin-left: auto; width: 38px; height: 52px; clip-path: url(#futp); background: none; position: relative; }
+      .roster-row .rating-badge.rb-gold { background: linear-gradient(160deg,#fff1b8 0%,#e0ae3a 40%,#a8731a 72%,#6b430a 100%); }
+      .roster-row .rating-badge.rb-silver { background: linear-gradient(160deg,#ffffff 0%,#dfe2e8 40%,#a9adb6 74%,#7b7f8b 100%); }
+      .roster-row .rating-badge.rb-bord { background: linear-gradient(160deg,#e0587a 0%,#a3183a 40%,#8a1430 70%,#4a0816 100%); }
+      .roster-row .rating-badge.rb-bord .rating-badge-num, .roster-row .rating-badge.rb-bord .rating-badge-label { -webkit-text-fill-color: #fff4dc; color: #fff4dc; }
+      .roster-row .rating-badge.rb-silver .rating-badge-num, .roster-row .rating-badge.rb-silver .rating-badge-label { -webkit-text-fill-color: #15171c; color: #15171c; }
+      .roster-row .rating-badge-num { font-size: 18px; line-height: 1; }
+      .roster-row .rating-badge-label { font-size: 9px; margin-top: 1px; }
+      .roster-row .avatar { display: block !important; width: 56px; height: 56px; flex: none; border: 2px solid rgba(233,185,73,.55); }
+      /* PRESENTE em tons de verde */
+      .presence-card-status-green { background: linear-gradient(100deg, rgba(46,160,90,.34), rgba(46,160,90,.16)); color: #5fe08a; }
+      /* botão LISTA ABERTA: seta em triângulo bordô, um pouco mais grosso, sem tremer */
+      .presence-open-banner { padding: 14px 18px; animation: pg-gold 1.8s ease-in-out infinite; will-change: box-shadow; backface-visibility: hidden; -webkit-font-smoothing: antialiased; }
+      .escalacao-banner { animation: pg-bord 2s ease-in-out infinite; }
+      .escalacao-banner-concluded { animation: none; }
+      .pob-arrow { display: inline-block; width: 0; height: 0; margin-left: 10px; vertical-align: -1px; border-top: 8px solid transparent; border-bottom: 8px solid transparent; border-left: 13px solid #8a1430; }
+      .escalacao-banner .pob-arrow { border-left-color: var(--gold); }
+      .presence-group-gk { background: linear-gradient(90deg,#b8284a,#6b0f26); color: #fff; }
+      .presence-group-gk + .presence-card-list, .presence-group-gk + ul.presence-list { border-left-color: #a3183a; box-shadow: inset 0 1px 0 rgba(224,88,122,.3); }
+      .presence-group-ok { background: linear-gradient(90deg,#f6d374,#c8962a); color: #2a1a02; }
+      .presence-group-ticket { background: linear-gradient(90deg,#f1f3f7,#9a9ea9); color: #15171c; }
+      .presence-group-ticket + .presence-card-list, .presence-group-ticket + ul.presence-list { border-left-color: #b6bac4; box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
+      .presence-group-out { background: linear-gradient(90deg,#4f535b,#2c2e33); color: #fff; }
+      .presence-group-out + .presence-card-list, .presence-group-out + ul.presence-list { border-left-color: #5a5e66; box-shadow: none; }
 
       /* ===== MODAIS ===== */
       .modal { border-radius: 4px !important; border: 2px solid var(--gold); background: var(--surface); box-shadow: 0 10px 0 rgba(0,0,0,.5); }
@@ -12167,7 +12269,7 @@ function Styles() {
       .roster-list { margin-top: 0; gap: 6px; }
       .roster-row { padding: 0 18px 0 10px; min-height: 70px; display: flex; flex-direction: column; justify-content: center; }
       .roster-row-main { gap: 0; }
-      .roster-row .avatar-square, .roster-row .avatar, .roster-row .roster-fullname, .roster-row .roster-sub, .roster-row .roster-instagram { display: none !important; }
+      .roster-row .roster-fullname, .roster-row .roster-sub, .roster-row .roster-instagram { display: none !important; }
       .roster-row .rating-badge { margin-right: 12px; width: 44px; height: 58px; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
       .roster-row .rating-badge-num { font-family: 'Anton',sans-serif; font-size: 19px; font-weight: 400; }
       .roster-row .rating-badge-label { font-family: 'Barlow Condensed',sans-serif; font-style: normal; font-weight: 700; font-size: 9px; letter-spacing: 1px; margin-top: 3px; }
