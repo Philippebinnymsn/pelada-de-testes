@@ -12415,6 +12415,14 @@ function Styles() {
       .fcards-dots { display: flex; gap: 6px; justify-content: center; margin-top: 10px; }
       .fcards-dots button { width: 8px; height: 4px; border: none; padding: 0; background: var(--border); cursor: pointer; transition: width .25s ease, background .25s ease; }
       .fcards-dots button.on { width: 18px; background: var(--gold); }
-    `}</style>
+    
+      /* botões LISTA ABERTA / ESCALAÇÃO DEFINIDA: 15% menores */
+      .presence-open-banner { min-height: 100px; padding: 20px 17px; margin-top: 14px; }
+      .presence-open-banner .presence-open-banner-title { font-size: 25.5px; }
+      .presence-open-banner .presence-open-banner-cta { font-size: 18px; }
+      .escalacao-banner .presence-open-banner-title { font-size: 23.4px; }
+      .pob-live { font-size: 12px; }
+      .pob-arrow { border-top-width: 8px; border-bottom-width: 8px; border-left-width: 13px; margin-left: 8px; }
+`}</style>
   );
 }
