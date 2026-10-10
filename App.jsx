@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "./supabaseClient.js";
 
 /* =========================================================================
@@ -2131,6 +2132,7 @@ function ProfileModal({ player, onClose: onCloseProp, onEdit, isAdmin, canEditOw
 
         <div className="profile-panel">
           <MembershipBadge player={player} className="membership-badge-profile" />
+          <ProfileAttendance playerId={player.id} />
           <div className="profile-stats profile-stats-2">
             <div className="profile-stats-left">
             <div className="profile-stat">
@@ -2260,6 +2262,7 @@ function FutCard({ p, photo, onViewPlayer, style, className = "" }) {
   const tone = p.isGK ? "bord" : isMensalista(p) ? "gold" : "silver";
   const tag = p.isGK ? "GOLEIRO" : isMensalista(p) ? "MENSALISTA" : "AVULSO";
   const label = displayName(p);
+  const { medal } = useAttendance(p.id);
   return (
             <div
               style={style}
@@ -2285,7 +2288,17 @@ function FutCard({ p, photo, onViewPlayer, style, className = "" }) {
                   {p.shirtNumber != null && (
                     <div className="fut-cam">
                       <svg viewBox="0 0 100 100" aria-hidden="true">
-                        <path d="M33 6 Q50 20 67 6 L92 20 L82 42 L72 37 L72 94 L28 94 L28 37 L18 42 L8 20 Z" />
+                        <defs>
+                          <linearGradient id={`camg-${tone}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop className="cg1" offset="0" />
+                            <stop className="cg2" offset="1" />
+                          </linearGradient>
+                        </defs>
+                        <path className="cam-body" fill={`url(#camg-${tone})`} d="M33 6 Q50 20 67 6 L92 20 L82 42 L72 37 L72 94 L28 94 L28 37 L18 42 L8 20 Z" />
+                        <path className="cam-fold" d="M28 37 L28 94 M72 37 L72 94" />
+                        <path className="cam-cuff" d="M12 27 L22 32 M88 27 L78 32" />
+                        <path className="cam-collar" d="M33 6 Q50 28 67 6" />
+                        <path className="cam-hem" d="M29 89 H71" />
                       </svg>
                       <span className="cam-n">{p.shirtNumber}</span>
                     </div>
@@ -2303,6 +2316,7 @@ function FutCard({ p, photo, onViewPlayer, style, className = "" }) {
                       <span className="fut-av-ini">{initials(label)}</span>
                     )}
                   </div>
+                  {medal > 0 && <div className="fut-seal"><AssiduoSeal rank={medal} size={26} /></div>}
                   <div className="fut-glass" />
                   <div className="fut-glass2" />
                 </div>
@@ -5345,6 +5359,7 @@ function AdminToolbar({
   onMensalistaControl,
   mensalistaCount,
   onAdminControl,
+  onStopwatch,
   onAnnouncement,
   onFinance,
   onSuggestions,
@@ -5423,6 +5438,7 @@ function AdminToolbar({
       count: suggestionsCount,
     },
     { key: "admins", icon: emo("👑"), label: "Administradores", onClick: onAdminControl },
+    { key: "stopwatch", icon: emo("⏱"), label: "Cronômetro (abrir)", onClick: onStopwatch },
     hasPelada && {
       key: "delete",
       icon: emo("🗑️"),
@@ -5802,6 +5818,16 @@ export default function PeladaApp() {
   const [swActor, setSwActor] = useState("Alguém");
   const sw = useSharedStopwatch(authUser, swActor);
   const swPush = usePushAlert(authUser);
+  const [, setClk] = useState(0);
+  useEffect(() => { const id = setInterval(() => setClk((n) => n + 1), 20000); return () => clearInterval(id); }, []);
+  const swBannerOn = !!authUser && isStopwatchWindowBRT() && sw.hiddenDate !== todayBRT();
+  const loadAttendance = async () => {
+    try {
+      const { data } = await supabase.rpc("attendance_stats");
+      if (Array.isArray(data)) setAttendanceRows(data);
+    } catch {}
+  };
+  useEffect(() => { loadAttendance(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [showPublishPelada, setShowPublishPelada] = useState(false);
   const [showPublishPeladaExtra, setShowPublishPeladaExtra] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -6220,6 +6246,7 @@ export default function PeladaApp() {
       .channel("peladas-public")
       .on("postgres_changes", { event: "*", schema: "public", table: "peladas" }, () => {
         loadPeladaAndPresences();
+        loadAttendance();
       })
       .subscribe();
     return () => {
@@ -9242,6 +9269,7 @@ export default function PeladaApp() {
               mensalistaCount={mensalistaList.length}
               onPaymentControl={() => setShowPaymentControl(true)}
               onAdminControl={() => setShowAdminControl(true)}
+              onStopwatch={() => setShowStopwatch(true)}
               onAnnouncement={() => setShowAnnouncementAdmin(true)}
               onFinance={openFinance}
               onSuggestions={openSuggestions}
@@ -9324,8 +9352,8 @@ export default function PeladaApp() {
             />
           )}
 
-          {authUser && <StopwatchBanner sw={sw} push={swPush} onOpen={() => setShowStopwatch(true)} />}
-          {authUser && showStopwatch && <StopwatchModal sw={sw} push={swPush} onClose={() => setShowStopwatch(false)} />}
+          {authUser && swBannerOn && <StopwatchBanner sw={sw} push={swPush} onOpen={() => setShowStopwatch(true)} />}
+          {authUser && showStopwatch && <StopwatchModal sw={sw} push={swPush} isAdmin={isAdmin} onClose={() => setShowStopwatch(false)} />}
 
           {showEscalacaoModal && publishedList && (
             <EscalacaoModal
@@ -10133,12 +10161,96 @@ function usePushAlert(authUser) {
   return { status, busy, enable, disable };
 }
 
+// Cronômetro aparece sozinho nas segundas, das 21h às 23h30 (Brasília).
+const brtNowParts = (now = new Date()) => {
+  const f = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", weekday: "short", hour: "numeric", minute: "numeric", hour12: false, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(now);
+  const g = (t) => f.find((x) => x.type === t)?.value;
+  return { weekday: g("weekday"), hour: Number(g("hour")) % 24, minute: Number(g("minute")), date: `${g("year")}-${g("month")}-${g("day")}` };
+};
+const isStopwatchWindowBRT = (now = new Date()) => {
+  const b = brtNowParts(now);
+  const mins = b.hour * 60 + b.minute;
+  return b.weekday === "Mon" && mins >= 21 * 60 && mins < 23 * 60 + 30;
+};
+const todayBRT = (now = new Date()) => brtNowParts(now).date;
+
+// Presença nas peladas concluídas (vem do banco: attendance_stats) + selos dos 3 mais assíduos
+const attStore = { v: 0, stats: {}, subs: new Set() };
+const attSubscribe = (fn) => { attStore.subs.add(fn); return () => attStore.subs.delete(fn); };
+const setAttendanceRows = (rows) => {
+  const m = {};
+  (rows || []).forEach((r) => { m[r.player_id] = { attended: r.attended, total: r.total, rank: r.rank }; });
+  attStore.stats = m;
+  attStore.v++;
+  attStore.subs.forEach((f) => f());
+};
+function useAttendance(playerId) {
+  useSyncExternalStore(attSubscribe, () => attStore.v);
+  const st = attStore.stats[playerId];
+  const medal = st && st.attended > 0 && st.rank >= 1 && st.rank <= 3 ? st.rank : 0;
+  return { stat: st || null, medal };
+}
+const SEAL_PATH = "M20.00 0.80 L23.69 3.82 L28.33 2.70 L30.35 7.02 L35.01 8.03 L34.96 12.80 L38.72 15.73 L36.60 20.00 L38.72 24.27 L34.96 27.20 L35.01 31.97 L30.35 32.98 L28.33 37.30 L23.69 36.18 L20.00 39.20 L16.31 36.18 L11.67 37.30 L9.65 32.98 L4.99 31.97 L5.04 27.20 L1.28 24.27 L3.40 20.00 L1.28 15.73 L5.04 12.80 L4.99 8.03 L9.65 7.02 L11.67 2.70 L16.31 3.82Z";
+const MEDAL_TONES = { 1: ["#fff3b0", "#f0cc3c", "#8a6410"], 2: ["#ffffff", "#c4cad4", "#6d7380"], 3: ["#ffd2a1", "#cd7f32", "#6b3a10"] };
+function AssiduoSeal({ rank, size = 34, label = "Participações em peladas concluídas" }) {
+  const [open, setOpen] = useState(false);
+  if (!rank) return null;
+  const [c1, c2, c3] = MEDAL_TONES[rank];
+  const id = `sealg${rank}`;
+  const root = typeof document !== "undefined" ? document.querySelector(".pelada-root") || document.body : null;
+  return (
+    <>
+      <button type="button" className="assiduo-seal" style={{ width: size, height: size }} aria-label={`${rank}º em ${label}`}
+        onClick={(e) => { e.stopPropagation(); setOpen(true); }}>
+        <svg viewBox="0 0 40 40" aria-hidden="true">
+          <defs><linearGradient id={id} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={c1} /><stop offset=".55" stopColor={c2} /><stop offset="1" stopColor={c3} /></linearGradient></defs>
+          <path d={SEAL_PATH} fill={`url(#${id})`} stroke={c3} strokeWidth="1" />
+          <circle cx="20" cy="20" r="11.5" fill="none" stroke={c3} strokeOpacity=".55" strokeWidth="1.2" />
+          <text x="20" y="25.6" textAnchor="middle" fontFamily="Anton, sans-serif" fontSize="16" fill={c3}>{rank}º</text>
+        </svg>
+      </button>
+      {open && root && createPortal(
+        <div className="modal-backdrop modal-center" onClick={(e) => { e.stopPropagation(); setOpen(false); }}>
+          <div className="modal assiduo-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="assiduo-big"><AssiduoSealFace rank={rank} /></div>
+            <h2 className="modal-title">{rank}º em {label}</h2>
+            <p className="payment-alert-body">Selo de assiduidade: {rank === 1 ? "o jogador mais presente" : rank === 2 ? "o 2º jogador mais presente" : "o 3º jogador mais presente"} nas listas das peladas já concluídas.</p>
+            <button className="btn btn-primary btn-block" onClick={() => setOpen(false)}>OK</button>
+          </div>
+        </div>, root)}
+    </>
+  );
+}
+function AssiduoSealFace({ rank }) {
+  const [c1, c2, c3] = MEDAL_TONES[rank];
+  const id = `sealf${rank}`;
+  return (
+    <svg viewBox="0 0 40 40" width="72" height="72" aria-hidden="true">
+      <defs><linearGradient id={id} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={c1} /><stop offset=".55" stopColor={c2} /><stop offset="1" stopColor={c3} /></linearGradient></defs>
+      <path d={SEAL_PATH} fill={`url(#${id})`} stroke={c3} strokeWidth="1" />
+      <circle cx="20" cy="20" r="11.5" fill="none" stroke={c3} strokeOpacity=".55" strokeWidth="1.2" />
+      <text x="20" y="25.6" textAnchor="middle" fontFamily="Anton, sans-serif" fontSize="16" fill={c3}>{rank}º</text>
+    </svg>
+  );
+}
+function ProfileAttendance({ playerId }) {
+  const { stat, medal } = useAttendance(playerId);
+  if (!stat) return null;
+  return (
+    <div className="profile-attendance">
+      <span className="profile-attendance-text">Presença em <b>{stat.attended}/{stat.total}</b> Peladas</span>
+      {medal > 0 && <AssiduoSeal rank={medal} size={38} />}
+    </div>
+  );
+}
+
 const STOPWATCH_ID = "00000000-0000-0000-0000-000000000003";
 const rowToStopwatch = (r) => r && ({
   status: r.status || "idle",
   durationMin: r.duration_min || 7,
   remainingMs: Number(r.remaining_ms ?? 420000),
   startedBy: r.started_by || null,
+  hiddenDate: r.hidden_date || null,
   lastBy: r.last_by || null,
   history: Array.isArray(r.history) ? r.history : [],
   updatedAt: r.updated_at,
@@ -10267,13 +10379,14 @@ function useSharedStopwatch(authUser, actor) {
     },
     pause: () => write({ status: "paused", remaining_ms: Math.round(remaining) }, "Pausado"),
     reset: () => { stopAlarm(); return write({ status: "idle", remaining_ms: dur * 60000, started_by: null }, "Resetado"); },
+    hideToday: () => write({ hidden_date: todayBRT() }, null),
     setMinutes: (m) => write({ status: "idle", duration_min: m, remaining_ms: m * 60000, started_by: null }, null),
   };
   return { loaded: !!row, st, remaining, running, finished, idle: st === "idle", durationMin: dur,
-    startedBy: row?.startedBy, history: row?.history || [], unlockAudio, stopAlarm, actions };
+    startedBy: row?.startedBy, hiddenDate: row?.hiddenDate || null, history: row?.history || [], unlockAudio, stopAlarm, actions };
 }
 
-function StopwatchModal({ sw, push, onClose: onCloseProp }) {
+function StopwatchModal({ sw, push, isAdmin, onHide, onClose: onCloseProp }) {
   const [busy, setBusy] = useState(false);
   const onClose = () => { fxClose(onCloseProp); };
   const act = async (fn) => { if (busy) return; setBusy(true); try { await fn(); } finally { setBusy(false); } };
@@ -10323,6 +10436,11 @@ function StopwatchModal({ sw, push, onClose: onCloseProp }) {
             ))}
           </ul>
         )}
+        {isAdmin && (
+          <button className="btn btn-ghost btn-block sb-hide" disabled={busy} onClick={() => act(async () => { await sw.actions.hideToday(); onHide?.(); })}>
+            REMOVER DA HOME (HOJE)
+          </button>
+        )}
         <div className="sb-push">
           {push.status === "on" || push.status === "off" ? null : (
             <p className="sb-push-note">
@@ -10350,7 +10468,7 @@ function StopwatchBanner({ sw, push, onOpen }) {
           <span className="presence-open-banner-title">CRONÔMETRO</span>
           {live && sw.startedBy && <span className="sw-by">iniciado por {sw.startedBy}</span>}
         </span>
-        <span className="presence-open-banner-cta">{sw.finished ? "00:00" : sw.st !== "idle" ? t : "ACESSE AQUI"}<i className="pob-arrow" /></span>
+        <span className="presence-open-banner-cta">{sw.finished ? "00:00" : sw.st !== "idle" ? t : "ABRIR"}<i className="pob-arrow" /></span>
       </span>
     </button>
   );
@@ -12374,6 +12492,56 @@ function Styles() {
       .sb-push-btn > * , .sb-push-btn svg { transform: none; }
       .sb-push-btn.is-on { color: #5fcf80; border-color: #2f7a48; font-size: 11.5px; }
       .sb-push-note { font-size: 11px; color: var(--text-dim); text-align: center; margin: 0; line-height: 1.4; }
+
+      /* ===== FASE 4: popups modernos (cantos diagonais, degradê, alertas zebrados) ===== */
+      .modal-backdrop { background: radial-gradient(90% 60% at 50% 100%, rgba(240,204,60,.07), transparent 70%), rgba(6,5,4,.8) !important; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+      .modal-backdrop.modal-center { align-items: center; padding: 18px; }
+      .modal {
+        border: 0 !important; border-left: 6px solid var(--gold) !important; border-radius: 0 !important; box-shadow: none !important;
+        background: radial-gradient(120% 70% at 100% 0%, rgba(240,204,60,.11), transparent 55%), linear-gradient(165deg, #2a241b 0%, #17130f 52%, #0e0c09 100%) !important;
+        clip-path: polygon(30px 0, 100% 0, 100% calc(100% - 30px), calc(100% - 30px) 100%, 0 100%, 0 30px);
+      }
+      .modal::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; z-index: 2; pointer-events: none;
+        background: linear-gradient(90deg, #fff3b0, var(--gold) 22%, rgba(240,204,60,0) 78%); }
+      .modal-title { position: relative; padding-bottom: 10px; margin-bottom: 18px; }
+      .modal-title::after { content: ""; display: block; width: 64px; height: 3px; margin-top: 9px; transform: skewX(-32deg); transform-origin: left;
+        background: linear-gradient(90deg, var(--gold), rgba(240,204,60,0)); }
+      .payment-alert-modal .modal-title::after, .assiduo-modal .modal-title::after { margin-left: auto; margin-right: auto; transform-origin: center; }
+      .modal.profile-modal { background: #000 !important; border-left-width: 0 !important; clip-path: polygon(26px 0, 100% 0, 100% calc(100% - 26px), calc(100% - 26px) 100%, 0 100%, 0 26px); }
+      .modal.profile-modal::before { display: none; }
+      /* alertas: linha zebrada no topo (mesma do botão PAGAMENTO) */
+      .payment-alert-modal, .modal.assiduo-modal { border-left: 0 !important; padding-top: 38px; }
+      .payment-alert-modal::before, .modal.assiduo-modal::before { height: 16px; opacity: 1;
+        background: repeating-linear-gradient(135deg, #000 0 12px, var(--gold) 12px 24px); }
+      .payment-alert-orange { border-image: none !important; }
+      .payment-alert-orange::before { background: repeating-linear-gradient(135deg, #000 0 12px, var(--alert) 12px 24px) !important; }
+      .toast { overflow: hidden; padding-left: 44px !important; }
+      .toast::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 22px; background: repeating-linear-gradient(135deg, #000 0 6px, rgba(0,0,0,0) 6px 12px); }
+      .sb-modal::before { background: repeating-linear-gradient(135deg, #000 0 12px, var(--gold) 12px 24px); height: 12px; }
+      .sb-modal { padding-top: 32px; }
+      .sb-hide { margin-top: 10px; font-size: 13px; }
+
+      /* camisa dos destaques: relevo, bainha, gola e sombra projetada */
+      .fut-cam { filter: drop-shadow(0 .3cqw .2cqw rgba(0,0,0,.85)) drop-shadow(1.4cqw 2.6cqw 1.8cqw rgba(0,0,0,.8)) drop-shadow(0 0 .7cqw rgba(255,255,255,.22)) !important; }
+      .fut-cam .cam-body { stroke: rgba(255,255,255,.42); stroke-width: 1.3; stroke-linejoin: round; }
+      .fut-gold .cg1 { stop-color: #7a4f12; } .fut-gold .cg2 { stop-color: #1d1102; }
+      .fut-silver .cg1 { stop-color: #727887; } .fut-silver .cg2 { stop-color: #1f2229; }
+      .fut-bord .cg1 { stop-color: #b0204a; } .fut-bord .cg2 { stop-color: #420818; }
+      .fut-cam .cam-fold { fill: none; stroke: rgba(0,0,0,.5); stroke-width: 1.6; }
+      .fut-cam .cam-cuff { fill: none; stroke: rgba(255,255,255,.34); stroke-width: 1.7; stroke-linecap: round; }
+      .fut-cam .cam-collar { fill: rgba(0,0,0,.4); stroke: rgba(255,255,255,.6); stroke-width: 2; stroke-linecap: round; }
+      .fut-cam .cam-hem { fill: none; stroke: rgba(255,255,255,.3); stroke-width: 1.5; stroke-linecap: round; }
+      .fut-seal { position: absolute; right: 3cqw; bottom: 3cqw; z-index: 6; }
+
+      /* presença + selos */
+      .profile-attendance { display: flex; align-items: center; gap: 10px; margin: -6px 0 14px; }
+      .profile-attendance-text { font-size: 12.5px; letter-spacing: .4px; color: var(--text-dim); }
+      .profile-attendance-text b { color: var(--text); font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-size: 16px; }
+      .assiduo-seal { background: none; border: 0; padding: 0; cursor: pointer; display: inline-flex; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); animation: seal-pop 2.6s ease-in-out infinite; }
+      .assiduo-seal svg { width: 100%; height: 100%; }
+      @keyframes seal-pop { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+      .assiduo-modal { text-align: center; max-width: 360px; }
+      .assiduo-big { display: flex; justify-content: center; margin-bottom: 8px; }
 `}</style>
   );
 }
