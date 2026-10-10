@@ -3,7 +3,7 @@
 // atualização. Imagens (raramente mudam) usam cache primeiro, atualizando
 // por trás, pra abrir rápido mesmo com internet ruim no campo. Se a rede
 // cair de vez, tudo cai de volta pro que já está salvo no aparelho.
-const CACHE_VERSION = "pelada-v2";
+const CACHE_VERSION = "pelada-v3";
 const STATIC_ASSETS = [
   "/manifest.json",
   "/favicon.png",
@@ -75,5 +75,31 @@ self.addEventListener("fetch", (event) => {
         return response;
       })
       .catch(() => caches.match(event.request))
+  );
+});
+
+// ---- Notificação push (cronômetro com o app fechado) ----
+self.addEventListener("push", (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch { data = {}; }
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Cronômetro Pelada 4K", {
+      body: data.body || "TEMPO ESGOTADO!",
+      icon: "/assets/icon-192.png",
+      badge: "/assets/icon-192.png",
+      tag: "cronometro",
+      renotify: true,
+      requireInteraction: true,
+      vibrate: [300, 150, 300, 150, 600],
+    })
+  );
+});
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      const c = list.find((x) => "focus" in x);
+      return c ? c.focus() : self.clients.openWindow("/");
+    })
   );
 });
