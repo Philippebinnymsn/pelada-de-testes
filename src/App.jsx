@@ -725,6 +725,13 @@ function generateDraw(selectedPlayers, numTeams, considerGK, method, rules) {
 
 /* --------------------------------- UI ----------------------------------- */
 
+function posCode(pos) {
+  const t = String(pos || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+  if (!t) return "JOG";
+  const map = [["GOLEIRO", "GOL"], ["ZAGUEIRO", "ZAG"], ["LATERAL", "LAT"], ["VOLANTE", "VOL"], ["MEIO", "MEI"], ["MEIA", "MEI"], ["ATACANTE", "ATA"], ["PONTA", "PON"], ["FIXO", "FIX"], ["ALA", "ALA"]];
+  for (const [k, v] of map) if (t.startsWith(k)) return v;
+  return t.slice(0, 3);
+}
 function Star({ filled }) {
   return <span style={{ opacity: filled ? 1 : 0.25 }}><Emo e="★" /></span>;
 }
@@ -757,22 +764,24 @@ function InstagramLink({ handle, className = "" }) {
 }
 
 // Selo de tipo de membro: mensalista (medalha de ouro) ou avulso (texto simples).
-function MembershipBadge({ player, className = "" }) {
+function MembershipBadge({ player, className = "", short = false }) {
   if (isMensalista(player)) {
     return (
       <span className={`membership-badge membership-badge-mensalista ${className}`}>
         <span className="membership-badge-icon" aria-hidden="true"><Emo e="🏅" /></span>
         {isTempMensalista(player) ? (
           <>
-            Membro Mensalista Temporário <span aria-hidden="true"><Emo e="🔄" /></span>
+            {short ? "Temporário" : "Membro Mensalista Temporário"} <span aria-hidden="true"><Emo e="🔄" /></span>
           </>
+        ) : short ? (
+          "Mensalista"
         ) : (
           "Membro Mensalista"
         )}
       </span>
     );
   }
-  return <span className={`membership-badge membership-badge-avulso ${className}`}>Membro Avulso</span>;
+  return <span className={`membership-badge membership-badge-avulso ${className}`}>{short ? "Avulso" : "Membro Avulso"}</span>;
 }
 
 function Stars({ count, max = 5 }) {
@@ -9491,6 +9500,9 @@ export default function PeladaApp() {
             </div>
           )}
 
+          {players.some((p) => p.cover1 || p.cover2 || p.cover3 || p.cover4 || p.cover5) && (
+            <div className="sec-title"><span><Emo e="⭐" />DESTAQUES</span></div>
+          )}
           <FeaturedCarousel players={players} onViewPlayer={setViewPlayer} />
 
           <button className="btn btn-ghost btn-block" onClick={openRulesPage}>
@@ -9514,6 +9526,7 @@ export default function PeladaApp() {
                 : "Ainda não há jogadores cadastrados. Peça para um administrador cadastrar o elenco."}
             </p>
           ) : (
+            <><div className="sec-title"><span><Emo e="⚽" />ELENCO</span></div>
             <ul className="roster-list">
               {rosterDisplayList.map((p) => (
                 <li key={p.id} className="roster-row" onClick={() => setViewPlayer(p)}>
@@ -9526,11 +9539,11 @@ export default function PeladaApp() {
                         {p.position || "Sem posição definida"}
                       </span>
                       {p.instagram && <InstagramLink handle={p.instagram} className="roster-instagram" />}
-                      <MembershipBadge player={p} className="membership-badge-roster" />
+                      <MembershipBadge player={p} className="membership-badge-roster" short />
                     </div>
                     <div className="rating-badge">
                       <span className="rating-badge-num">{p.rating}</span>
-                      <span className="rating-badge-label">NOTA</span>
+                      <span className="rating-badge-label">{posCode(p.position)}</span>
                     </div>
                   </div>
                   {(isAdmin || (myPlayer && myPlayer.id === p.id)) && (
@@ -9550,7 +9563,7 @@ export default function PeladaApp() {
                   )}
                 </li>
               ))}
-            </ul>
+            </ul></>
           )}
 
           {!isAdmin && (
@@ -11985,6 +11998,28 @@ function Styles() {
       .modal { border-radius: 4px !important; max-width: 440px; padding: 22px 20px 22px !important; max-height: 86vh; animation: pg-pop .22s cubic-bezier(.2,.9,.3,1.2); }
       @keyframes pg-pop { from { opacity: 0; transform: scale(.92) translateY(10px); } to { opacity: 1; transform: none; } }
       .toast { bottom: auto !important; top: 50%; left: 50%; transform: translate(-50%, -50%) !important; border-radius: 0; clip-path: polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%); padding: 14px 28px; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 18px; letter-spacing: .6px; text-transform: uppercase; box-shadow: none; }
+
+      /* ===== ELENCO NO FORMATO DO MOCKUP: barras compactas com escudo (nota + posição) ===== */
+      .sec-title { display: flex; align-items: center; gap: 10px; margin: 16px 0 8px; }
+      .sec-title span { display: inline-flex; align-items: center; gap: 8px; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 19px; letter-spacing: 2px;
+        color: #2a1a02; background: linear-gradient(90deg,#f6d374,#c8962a); padding: 3px 18px 3px 12px; clip-path: polygon(0 0,100% 0,calc(100% - 10px) 100%,0 100%); text-transform: uppercase; }
+      .sec-title:after { content: ""; flex: 1; height: 2px; background: linear-gradient(90deg, var(--gold), transparent); }
+      .roster-list { margin-top: 0; gap: 6px; }
+      .roster-row { padding: 0 18px 0 10px; min-height: 70px; display: flex; flex-direction: column; justify-content: center; }
+      .roster-row-main { gap: 0; }
+      .roster-row .avatar-square, .roster-row .avatar, .roster-row .roster-fullname, .roster-row .roster-sub, .roster-row .roster-instagram { display: none !important; }
+      .roster-row .rating-badge { margin-right: 12px; width: 44px; height: 58px; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+      .roster-row .rating-badge-num { font-family: 'Anton',sans-serif; font-size: 19px; font-weight: 400; }
+      .roster-row .rating-badge-label { font-family: 'Barlow Condensed',sans-serif; font-style: normal; font-weight: 700; font-size: 9px; letter-spacing: 1px; margin-top: 3px; }
+      .roster-row .roster-info { gap: 2px; }
+      .roster-row .roster-name { font-size: 21px; line-height: 1.05; }
+      .roster-row .membership-badge { background: none; padding: 0; clip-path: none; font-size: 12px; letter-spacing: 1px; align-self: flex-start; }
+      .roster-row .membership-badge-icon { display: none; }
+      .roster-row .membership-badge-avulso { color: #fff; }
+      .roster-row .roster-row-footer { position: absolute; right: 24px; top: 6px; }
+      .roster-row .roster-edit-link { font-size: 11px; }
+      .interest-cta-btn { justify-content: space-between; text-align: left; border-radius: 0; background: var(--surface) !important; box-shadow: none !important; border-left: 6px solid var(--gold) !important; padding: 14px 18px !important; font-size: 19px !important; color: #fff !important; margin-top: 14px; }
+      .interest-cta-btn .count-pill { margin-left: auto; }
     `}</style>
   );
 }
