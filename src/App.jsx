@@ -433,9 +433,9 @@ const uid = (p = "id") =>
 function renderBoldText(text) {
   return text.split(/(\*[^*]+\*)/g).map((part, i) =>
     part.startsWith("*") && part.endsWith("*") && part.length > 1 ? (
-      <strong key={i}>{part.slice(1, -1)}</strong>
+      <strong key={i}>{emo(part.slice(1, -1))}</strong>
     ) : (
-      <React.Fragment key={i}>{part}</React.Fragment>
+      <React.Fragment key={i}>{emo(part)}</React.Fragment>
     )
   );
 }
@@ -1741,7 +1741,7 @@ function MyProfileForm({ player, initialPhone, onSave, onCancel }) {
   return (
     <div className="modal-backdrop" onClick={onCancel}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2 className="modal-title">Meu card</h2>
+        <h2 className="modal-title">Editar meu perfil</h2>
         <p className="admin-hint">
           Você pode trocar sua foto de perfil, as fotos de capa e o nome que aparece nos
           cards. O resto (nome completo, nota, posição) só o administrador altera.
@@ -1861,49 +1861,62 @@ function MyProfileForm({ player, initialPhone, onSave, onCancel }) {
           />
         )}
 
-        <label className="field-label">Nome que aparece nos cards</label>
-        <input
-          className="input"
-          value={nickname}
-          onChange={(e) => setNickname(e.target.value)}
-          placeholder="Como você é chamado na pelada"
-        />
+        <label className="fld">
+          <span className="k">NOME</span>
+          <input className="v" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="Como te chamam" />
+        </label>
         <p className="field-hint">Aparece sempre em caixa alta nos cards.</p>
 
-        <label className="field-label">Camisa (opcional)</label>
-        <input
-          className="input"
-          type="number"
-          inputMode="numeric"
-          min="0"
-          max="99"
-          value={shirt}
-          onChange={(e) => setShirt(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
-          placeholder="Ex.: 10"
-        />
+        <label className="fld fld-new">
+          <span className="k">CAMISA</span>
+          <input
+            className="v"
+            type="number"
+            inputMode="numeric"
+            min="0"
+            max="99"
+            value={shirt}
+            onChange={(e) => setShirt(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
+            placeholder="Ex.: 10"
+          />
+        </label>
         <p className="field-hint">Aparece no canto da sua carta de destaque (0 a 99).</p>
 
         <label className="field-label">Time do coração (opcional)</label>
         <FavoriteTeamField value={favoriteTeam} onChange={(v) => setFavoriteTeam(v || "")} />
 
-        <label className="field-label">Instagram (opcional)</label>
-        <input
-          className="input"
-          value={instagram}
-          onChange={(e) => setInstagram(e.target.value)}
-          placeholder="@usuario"
-        />
+        <label className="fld">
+          <span className="k">INSTAGRAM</span>
+          <input className="v" value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="@usuario" />
+        </label>
         <p className="field-hint">Aparece no seu card com o ícone do Instagram, pra todo mundo ver.</p>
 
-        <label className="field-label">Contato telefônico (opcional)</label>
-        <input
-          className="input"
-          type="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="(00) 00000-0000"
-        />
+        <label className="fld">
+          <span className="k">TELEFONE</span>
+          <input className="v" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(00) 00000-0000" />
+        </label>
         <p className="field-hint">Só administradores conseguem ver — o resto do elenco não vê.</p>
+
+        <div className="fut-preview">
+          <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true">
+            <defs>
+              <clipPath id="futp" clipPathUnits="objectBoundingBox">
+                <path d="M0.10,0 L0.90,0 Q1,0 1,0.07 L1,0.80 Q1,0.90 0.80,0.945 L0.5,1 L0.20,0.945 Q0,0.90 0,0.80 L0,0.07 Q0,0 0.10,0 Z" />
+              </clipPath>
+            </defs>
+          </svg>
+          <FutCard
+            style={{ width: 170, pointerEvents: "none" }}
+            p={{
+              ...player,
+              nickname: nickname.trim() ? formatDisplayNameValue(nickname) : null,
+              shirtNumber: shirt === "" ? null : Math.min(99, Number(shirt)),
+              photo,
+              photoPosition,
+            }}
+            photo={covers[0] ? { url: covers[0], position: coverPositions[0] } : null}
+          />
+        </div>
 
         <div className="modal-actions">
           <button className="btn btn-ghost" onClick={onCancel}>
@@ -1911,7 +1924,7 @@ function MyProfileForm({ player, initialPhone, onSave, onCancel }) {
           </button>
           <div className="spacer" />
           <button
-            className="btn btn-primary"
+            className="btn btn-primary mb-save"
             disabled={Object.values(uploading).some(Boolean)}
             onClick={() =>
               onSave({
@@ -1936,7 +1949,7 @@ function MyProfileForm({ player, initialPhone, onSave, onCancel }) {
               })
             }
           >
-            Salvar
+            <span>SALVAR</span>
           </button>
         </div>
       </div>
@@ -2198,44 +2211,13 @@ const sortRosterForHome = (players) =>
 const FUT_SIL = (
   <svg viewBox="0 0 84 88" fill="currentColor" aria-hidden="true"><circle cx="42" cy="26" r="17" /><path d="M6 88c2-26 16-34 36-34s34 8 36 34z" /></svg>
 );
-function FeaturedCards({ players, onViewPlayer }) {
-  const withCover = players.filter((p) => p.cover1 || p.cover2 || p.cover3 || p.cover4 || p.cover5);
-  const listKey = withCover.map((p) => p.id).join(",");
-  const entries = React.useMemo(
-    () =>
-      [...withCover]
-        .sort((a, b) => featuredShuffleKey(a.id) - featuredShuffleKey(b.id))
-        .map((p) => ({ player: p, photo: pickRandomCover(p) })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [listKey]
-  );
-  const pages = [];
-  for (let i = 0; i < entries.length; i += 3) pages.push(entries.slice(i, i + 3));
-  const [page, setPage] = useState(0);
-  useEffect(() => {
-    if (pages.length < 2) return;
-    const t = setTimeout(() => setPage((x) => (x + 1) % pages.length), 5000);
-    return () => clearTimeout(t);
-  }, [page, pages.length]);
-  if (!entries.length) return null;
-  const cur = pages[Math.min(page, pages.length - 1)];
+function FutCard({ p, photo, onViewPlayer, style }) {
+  const tone = p.isGK ? "bord" : isMensalista(p) ? "gold" : "silver";
+  const tag = p.isGK ? "GOLEIRO" : isMensalista(p) ? "MENSALISTA" : "AVULSO";
+  const label = displayName(p);
   return (
-    <div className="fcards-wrap">
-      <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true">
-        <defs>
-          <clipPath id="futp" clipPathUnits="objectBoundingBox">
-            <path d="M0.10,0 L0.90,0 Q1,0 1,0.07 L1,0.80 Q1,0.90 0.80,0.945 L0.5,1 L0.20,0.945 Q0,0.90 0,0.80 L0,0.07 Q0,0 0.10,0 Z" />
-          </clipPath>
-        </defs>
-      </svg>
-      <div className="fcards" key={page}>
-        {cur.map(({ player: p, photo }) => {
-          const tone = p.isGK ? "bord" : isMensalista(p) ? "gold" : "silver";
-          const tag = p.isGK ? "GOLEIRO" : isMensalista(p) ? "MENSALISTA" : "AVULSO";
-          const label = displayName(p);
-          return (
             <div
-              key={p.id}
+              style={style}
               className={`fut fut-${tone}`}
               role="button"
               tabIndex={0}
@@ -2281,7 +2263,41 @@ function FeaturedCards({ players, onViewPlayer }) {
                 </div>
               </div>
             </div>
-          );
+  );
+}
+function FeaturedCards({ players, onViewPlayer }) {
+  const withCover = players.filter((p) => p.cover1 || p.cover2 || p.cover3 || p.cover4 || p.cover5);
+  const listKey = withCover.map((p) => p.id).join(",");
+  const entries = React.useMemo(
+    () =>
+      [...withCover]
+        .sort((a, b) => featuredShuffleKey(a.id) - featuredShuffleKey(b.id))
+        .map((p) => ({ player: p, photo: pickRandomCover(p) })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [listKey]
+  );
+  const pages = [];
+  for (let i = 0; i < entries.length; i += 3) pages.push(entries.slice(i, i + 3));
+  const [page, setPage] = useState(0);
+  useEffect(() => {
+    if (pages.length < 2) return;
+    const t = setTimeout(() => setPage((x) => (x + 1) % pages.length), 5000);
+    return () => clearTimeout(t);
+  }, [page, pages.length]);
+  if (!entries.length) return null;
+  const cur = pages[Math.min(page, pages.length - 1)];
+  return (
+    <div className="fcards-wrap">
+      <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true">
+        <defs>
+          <clipPath id="futp" clipPathUnits="objectBoundingBox">
+            <path d="M0.10,0 L0.90,0 Q1,0 1,0.07 L1,0.80 Q1,0.90 0.80,0.945 L0.5,1 L0.20,0.945 Q0,0.90 0,0.80 L0,0.07 Q0,0 0.10,0 Z" />
+          </clipPath>
+        </defs>
+      </svg>
+      <div className="fcards" key={page}>
+        {cur.map(({ player: p, photo }) => {
+          return <FutCard key={p.id} p={p} photo={photo} onViewPlayer={onViewPlayer} />;
         })}
       </div>
       {pages.length > 1 && (
@@ -5636,7 +5652,7 @@ const RULES_ITEMS = [
   "*Equilíbrio de times:* Fica definido a troca de peças chave após sorteio para equilíbrio e disputa saudável da pelada. Sabemos que em outras peladas não funciona assim, porém nossa turma é pequena e não somos 100% peladeiros. Portanto, contamos com a colaboração de todos quanto a isso, evitando piadas e falácias sobre o tema.",
   "*Pagamento Avulso:* Deverá ser feito até 14h da segunda-feira",
   "*Pagamento mensal:* Deverá ser feito *ATÉ A PRIMEIRA PELADA DO MÊS!* Após, multa 10$ por semana.",
-  emo("*Regra-mor do bom senso:* nossa pelada é pra divertir, de forma honesta e com disputa saudável. *Sem reclamações excessivas, sem molecagem.* Vamos resolver tudo considerando que estamos todos ali pra fugir do estresse e não entrar nele. 👍🏼"),
+  ("*Regra-mor do bom senso:* nossa pelada é pra divertir, de forma honesta e com disputa saudável. *Sem reclamações excessivas, sem molecagem.* Vamos resolver tudo considerando que estamos todos ali pra fugir do estresse e não entrar nele. 👍🏼"),
 ];
 const RULES_CONTACT =
   "*Qualquer dúvida, sugestão ou demanda, deverá ser feita diretamente aos ADMs, Norman, Felipe Muniz ou Freitas.*";
@@ -12168,6 +12184,16 @@ function Styles() {
       .fut:active { translate: 0 0; filter: drop-shadow(0 6px 10px rgba(0,0,0,.55)) brightness(.92); transition-duration: .06s; }
       .fut-o { position: absolute; inset: 0; clip-path: url(#futp); }
       .fut-i { position: absolute; inset: 2.4cqw; clip-path: url(#futp); overflow: hidden; }
+      /* editar meu perfil: barras no padrão LISTA ABERTA (paralelogramo + borda bordô + sombra) */
+      .fld { display: flex; align-items: center; background: var(--surface-2); border-left: 6px solid var(--maroon); padding: 0 16px; height: 46px; margin: 10px 8px 0 0; transform: skewX(-14deg); box-shadow: 0 4px 0 rgba(0,0,0,.5); cursor: text; }
+      .fld > * { transform: skewX(14deg); }
+      .fld.fld-new { background: linear-gradient(90deg,#3a2c0a,var(--surface-2)); border-left-color: var(--gold); }
+      .fld .k { font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; font-size: 13px; color: var(--gold); width: 96px; flex: none; }
+      .fld .v { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; color: var(--text); font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; text-transform: uppercase; font-size: 19px; letter-spacing: .6px; padding: 0; }
+      .fld .v::placeholder { color: var(--text-dim); opacity: .6; text-transform: none; font-weight: 700; }
+      .fut-preview { display: flex; justify-content: center; margin: 22px 0 14px; }
+      .modal-actions .mb-save { clip-path: none; border-radius: 0; transform: skewX(-14deg); background: linear-gradient(180deg,#f6d374,#c8962a) !important; color: #2a1a02 !important; box-shadow: 0 4px 0 #7a560f !important; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; letter-spacing: 1px; font-size: 20px; padding: 10px 28px; }
+      .modal-actions .mb-save span { display: inline-block; transform: skewX(14deg); }
       .fut-gold .fut-o { background: linear-gradient(160deg,#8a5d12,#5b3a05 60%,#3d2603); }
       .fut-silver .fut-o { background: linear-gradient(160deg,#6d717c,#454955 60%,#2e3038); }
       .fut-bord .fut-o { background: linear-gradient(160deg,#6b0f26,#3d0715 60%,#260410); }
@@ -12179,10 +12205,10 @@ function Styles() {
       .fut-bg svg { width: 100%; height: 100%; opacity: .4; }
       .fut-bg img { width: 100%; height: 100%; object-fit: cover; display: block; }
       .fut-tint { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 30%, rgba(255,255,255,.22), transparent 60%); }
-      .fut-shade { position: absolute; left: 0; right: 0; bottom: 0; top: 48%; }
-      .fut-gold .fut-shade { background: linear-gradient(155deg, rgba(200,150,42,0) 18%, rgba(200,150,42,1) 78%); }
-      .fut-silver .fut-shade { background: linear-gradient(155deg, rgba(154,158,169,0) 18%, rgba(154,158,169,1) 78%); }
-      .fut-bord .fut-shade { background: linear-gradient(155deg, rgba(107,15,38,0) 18%, rgba(107,15,38,1) 78%); }
+      .fut-shade { position: absolute; inset: 0; }
+      .fut-gold .fut-shade { background: linear-gradient(155deg, rgba(200,150,42,0) 0%, rgba(200,150,42,0) 42%, rgba(200,150,42,.16) 52%, rgba(200,150,42,.42) 62%, rgba(200,150,42,.74) 74%, rgba(200,150,42,.94) 86%, rgba(200,150,42,1) 94%); }
+      .fut-silver .fut-shade { background: linear-gradient(155deg, rgba(154,158,169,0) 0%, rgba(154,158,169,0) 42%, rgba(154,158,169,.16) 52%, rgba(154,158,169,.42) 62%, rgba(154,158,169,.74) 74%, rgba(154,158,169,.94) 86%, rgba(154,158,169,1) 94%); }
+      .fut-bord .fut-shade { background: linear-gradient(155deg, rgba(107,15,38,0) 0%, rgba(107,15,38,0) 42%, rgba(107,15,38,.16) 52%, rgba(107,15,38,.42) 62%, rgba(107,15,38,.74) 74%, rgba(107,15,38,.94) 86%, rgba(107,15,38,1) 94%); }
       .fut-bar { position: absolute; left: 24cqw; right: 0; top: 4.5cqw; height: 16cqw; border-radius: 2cqw 0 0 2cqw; box-shadow: 0 1cqw 2cqw rgba(0,0,0,.35); }
       .fut-bar.noshirt { left: 11cqw; }
       .fut-gold .fut-bar { background: linear-gradient(180deg,#33200a,#1a0f02); }
