@@ -482,9 +482,9 @@ if (typeof document !== "undefined" && !document.getElementById("futp-defs")) {
   document.body.appendChild(holder);
 }
 
-const clampRating = (n) => Math.min(10, Math.max(1, Math.round(n)));
+const clampRating = (n) => Math.min(99, Math.max(1, Math.round(Number(n) || 1)));
 
-const starsFilled = (rating) => Math.min(5, Math.max(1, Math.round(rating / 2)));
+const starsFilled = (rating) => Math.min(5, Math.max(1, Math.round(rating / (rating > 10 ? 20 : 2))));
 
 // Numeração em emoji (01, 02, ...) usada na lista de presença — o mesmo
 // estilo que já circula nos grupos de WhatsApp de pelada.
@@ -1288,6 +1288,7 @@ function PlayerForm({
   const [name, setName] = useState(player?.name ?? "");
   const [nickname, setNickname] = useState(player?.nickname ?? "");
   const [rating, setRating] = useState(player?.rating ?? 7);
+  const [ratingTxt, setRatingTxt] = useState(String(player?.rating ?? 7).padStart(2, "0"));
   const [isGK, setIsGK] = useState(player?.isGK ?? false);
   const [photo, setPhoto] = useState(player?.photo ?? null);
   const [photoPosition, setPhotoPosition] = useState(player?.photoPosition ?? "50% 50%");
@@ -1530,16 +1531,25 @@ function PlayerForm({
         </p>
 
         <label className="field-label">
-          Qualidade — <Stars count={starsFilled(rating)} /> ({rating}/10)
+          Nota — <Stars count={starsFilled(rating)} /> ({String(rating).padStart(2, "0")}/99)
         </label>
         <input
-          className="slider"
-          type="range"
-          min={1}
-          max={10}
-          value={rating}
-          onChange={(e) => setRating(clampRating(Number(e.target.value)))}
+          className="input nota-input"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={2}
+          value={ratingTxt}
+          placeholder="00"
+          onFocus={(e) => e.target.select()}
+          onChange={(e) => {
+            const v = e.target.value.replace(/\D/g, "").slice(0, 2);
+            setRatingTxt(v);
+            if (v !== "") setRating(clampRating(Number(v)));
+          }}
+          onBlur={() => setRatingTxt(String(rating).padStart(2, "0"))}
         />
+        <p className="field-hint">Digite dois números, de 00 a 99.</p>
 
         <label className="switch-row">
           <span><Emo e="🧤" /> Goleiro</span>
@@ -4028,7 +4038,7 @@ function InterestQueueName({ player, info }) {
   );
 }
 
-function PublicInterestModal({ list, tempInfo, addedByName, availableToAdd, onAdd, onClose }) {
+function PublicInterestModal({ list, tempInfo, addedByName, availableToAdd, onAdd, onClose, canRequest, alreadyRequested, onRequest }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -4054,6 +4064,14 @@ function PublicInterestModal({ list, tempInfo, addedByName, availableToAdd, onAd
         </ul>
         {list.length === 0 && (
           <p className="empty-hint">Ninguém manifestou interesse em ser mensalista ainda.</p>
+        )}
+        {canRequest && !alreadyRequested && (
+          <button className="btn btn-primary btn-block" onClick={onRequest}>
+            <Emo e="🏅" /> Tenho interesse em ser mensalista
+          </button>
+        )}
+        {canRequest && alreadyRequested && (
+          <p className="field-hint"><Emo e="✅" /> Seu pedido já está na lista.</p>
         )}
         <div className="modal-actions">
           <div className="spacer" />
@@ -9960,6 +9978,9 @@ export default function PeladaApp() {
           addedByName={isAdmin ? interestAddedByName : null}
           availableToAdd={interestAvailableToAdd}
           onAdd={isAdmin ? adminMarkInterest : null}
+          canRequest={!isAdmin && !!myPlayer && !isMensalista(myPlayer)}
+          alreadyRequested={!!myPlayer?.membershipInterestAt}
+          onRequest={expressMembershipInterest}
           onClose={() => setShowPublicInterestList(false)}
         />
       )}
@@ -12621,7 +12642,7 @@ function Styles() {
 
       /* banner do cronômetro: dourado escuro em degradê + faixa pontilhada (igual aos popups) */
       .presence-open-banner .pob-left { padding-left: 12px; }
-      .stopwatch-banner { background: linear-gradient(165deg, #8a6418 0%, #4a340c 48%, #1d1407 100%) !important; border-left-color: var(--gold) !important; position: relative; }
+      .stopwatch-banner { background: linear-gradient(165deg, #c9962a 0%, #7a5614 28%, #2a1d07 62%, #070503 100%) !important; border-left-color: var(--gold) !important; position: relative; }
       .stopwatch-banner::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 9px; pointer-events: none; background: repeating-linear-gradient(135deg, #000 0 9px, var(--gold) 9px 18px); }
       .stopwatch-banner .pob-in { padding-top: 9px; }
       .stopwatch-banner .presence-open-banner-title { color: #fff !important; }
