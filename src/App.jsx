@@ -5612,7 +5612,7 @@ function EscalacaoBanner({ onOpen, concluded }) {
       onClick={onOpen}
     >
       <span className="pob-in">
-        <span className="pob-left"><span className="presence-open-banner-title">ESCALAÇÃO DEFINIDA</span></span>
+        <span className="pob-left"><span className="pob-live"><i className="pob-dot" />AO VIVO</span><span className="presence-open-banner-title">ESCALAÇÃO DEFINIDA</span></span>
         <span className="presence-open-banner-cta">ACESSE AQUI<i className="pob-arrow" /></span>
       </span>
       {concluded && (
@@ -12124,6 +12124,18 @@ function Styles() {
       /* elenco: mais espaço entre foto e nome */
       .roster-row-main { gap: 20px !important; }
       .roster-row .avatar { margin-right: 4px; }
+      /* LISTA ABERTA e ESCALAÇÃO DEFINIDA: mesmo tamanho e mesmas animações (ao vivo, pulo, brilhos) */
+      .presence-open-banner { min-height: 118px; align-items: center; will-change: transform;
+        animation: pg-gold 1.8s ease-in-out infinite, pg-bounce 2.4s ease-in-out infinite; }
+      .escalacao-banner:not(.escalacao-banner-concluded) { animation: pg-gold 1.8s ease-in-out infinite, pg-bounce 2.4s ease-in-out infinite !important; }
+      @keyframes pg-bounce { 0%,100% { transform: skewX(-14deg) translate3d(0,0,0); } 50% { transform: skewX(-14deg) translate3d(0,-4px,0); } }
+      .presence-open-banner::after { left: -60%; animation: banner-sheen 3.2s ease-in-out infinite; background: linear-gradient(100deg, transparent, rgba(246,211,116,.55), transparent); }
+      .escalacao-banner:not(.escalacao-banner-concluded)::after { background: linear-gradient(100deg, transparent, rgba(255,255,255,.65), transparent); }
+      @keyframes banner-sheen { 0% { left: -60%; } 55%, 100% { left: 140%; } }
+      .presence-open-banner .pob-in, .presence-open-banner .pob-left { backface-visibility: hidden; }
+      .escalacao-banner:not(.escalacao-banner-concluded) .pob-live { background: linear-gradient(100deg,#8a1430 0%,#8a1430 38%,#fff 50%,#8a1430 62%,#8a1430 100%); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+      .presence-open-banner.escalacao-banner-concluded { animation: none !important; }
+      .presence-open-banner.escalacao-banner-concluded::after { animation: none; }
       /* ESCALAÇÃO DEFINIDA: fundo dourado, aba bordô, texto preto */
       .escalacao-banner:not(.escalacao-banner-concluded) { background: linear-gradient(100deg,#f6d374,#c8962a) !important; border-left: 8px solid #8a1430 !important; animation: pg-gold 1.8s ease-in-out infinite !important; }
       .escalacao-banner:not(.escalacao-banner-concluded) .presence-open-banner-title, .escalacao-banner:not(.escalacao-banner-concluded) .presence-open-banner-cta { color: #000 !important; }
