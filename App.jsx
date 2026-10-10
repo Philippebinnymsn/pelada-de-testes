@@ -34,6 +34,7 @@ function rowToPlayer(row) {
     cover5Position: row.cover5_position || "50% 50%",
     position: row.position,
     favoriteTeam: row.favorite_team,
+    shirtNumber: row.shirt_number ?? null,
     userId: row.user_id ?? null,
     instagram: row.instagram ?? null,
     membershipType: row.membership_type ?? "avulso",
@@ -65,6 +66,7 @@ function playerToRow(p) {
     cover5_position: p.cover5Position || "50% 50%",
     position: p.position,
     favorite_team: p.favoriteTeam,
+    ...(p.shirtNumber != null || p.shirtNumberClear ? { shirt_number: p.shirtNumber ?? null } : {}),
     instagram: p.instagram,
     ...(p.membershipType ? { membership_type: p.membershipType } : {}),
   };
@@ -1263,6 +1265,7 @@ function PlayerForm({
   const [reframeCoverIndex, setReframeCoverIndex] = useState(null);
   const [position, setPosition] = useState(player?.position ?? "");
   const [favoriteTeam, setFavoriteTeam] = useState(player?.favoriteTeam ?? "");
+  const [shirt, setShirt] = useState(player?.shirtNumber != null ? String(player.shirtNumber) : "");
   const [instagram, setInstagram] = useState(player?.instagram ?? "");
   const [phone, setPhone] = useState(initialPhone ?? "");
   const [membershipType, setMembershipType] = useState(player?.membershipType ?? "avulso");
@@ -1516,6 +1519,19 @@ function PlayerForm({
           ))}
         </select>
 
+        <label className="field-label">Camisa (opcional)</label>
+        <input
+          className="input"
+          type="number"
+          inputMode="numeric"
+          min="0"
+          max="99"
+          value={shirt}
+          onChange={(e) => setShirt(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
+          placeholder="Ex.: 10"
+        />
+        <p className="field-hint">Aparece no canto da sua carta de destaque (0 a 99).</p>
+
         <label className="field-label">Time do coração (opcional)</label>
         <FavoriteTeamField value={favoriteTeam} onChange={(v) => setFavoriteTeam(v || "")} />
 
@@ -1614,6 +1630,8 @@ function PlayerForm({
                 cover5Position: coverPositions[4],
                 position: position || null,
                 favoriteTeam: favoriteTeam.trim() || null,
+                shirtNumber: shirt === "" ? null : Math.min(99, Number(shirt)),
+                shirtNumberClear: shirt === "" && player?.shirtNumber != null,
                 instagram: cleanInstagramHandle(instagram) || null,
                 phone: phone.trim() || null,
                 membershipType,
@@ -1634,6 +1652,7 @@ function PlayerForm({
 // aqui é só pra nem mostrar o campo.
 function MyProfileForm({ player, initialPhone, onSave, onCancel }) {
   const [nickname, setNickname] = useState(player?.nickname ?? "");
+  const [shirt, setShirt] = useState(player?.shirtNumber != null ? String(player.shirtNumber) : "");
   const [favoriteTeam, setFavoriteTeam] = useState(player?.favoriteTeam ?? "");
   const [instagram, setInstagram] = useState(player?.instagram ?? "");
   const [phone, setPhone] = useState(initialPhone ?? "");
@@ -1851,6 +1870,19 @@ function MyProfileForm({ player, initialPhone, onSave, onCancel }) {
         />
         <p className="field-hint">Aparece sempre em caixa alta nos cards.</p>
 
+        <label className="field-label">Camisa (opcional)</label>
+        <input
+          className="input"
+          type="number"
+          inputMode="numeric"
+          min="0"
+          max="99"
+          value={shirt}
+          onChange={(e) => setShirt(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
+          placeholder="Ex.: 10"
+        />
+        <p className="field-hint">Aparece no canto da sua carta de destaque (0 a 99).</p>
+
         <label className="field-label">Time do coração (opcional)</label>
         <FavoriteTeamField value={favoriteTeam} onChange={(v) => setFavoriteTeam(v || "")} />
 
@@ -1885,6 +1917,8 @@ function MyProfileForm({ player, initialPhone, onSave, onCancel }) {
               onSave({
                 nickname: nickname.trim() ? formatDisplayNameValue(nickname) : null,
                 favoriteTeam: favoriteTeam.trim() || null,
+                shirtNumber: shirt === "" ? null : Math.min(99, Number(shirt)),
+                shirtNumberClear: shirt === "" && player?.shirtNumber != null,
                 instagram: cleanInstagramHandle(instagram) || null,
                 phone: phone.trim() || null,
                 photo,
@@ -2161,6 +2195,9 @@ const sortRosterForHome = (players) =>
 
 // DESTAQUES no formato do mockup: 3 cartas em escudo (ouro = mensalista, prata = avulso,
 // bordô = goleiro), com a foto de capa dentro da carta, nota/posição no topo e nome embaixo.
+const FUT_SIL = (
+  <svg viewBox="0 0 84 88" fill="currentColor" aria-hidden="true"><circle cx="42" cy="26" r="17" /><path d="M6 88c2-26 16-34 36-34s34 8 36 34z" /></svg>
+);
 function FeaturedCards({ players, onViewPlayer }) {
   const withCover = players.filter((p) => p.cover1 || p.cover2 || p.cover3 || p.cover4 || p.cover5);
   const listKey = withCover.map((p) => p.id).join(",");
@@ -2184,14 +2221,22 @@ function FeaturedCards({ players, onViewPlayer }) {
   const cur = pages[Math.min(page, pages.length - 1)];
   return (
     <div className="fcards-wrap">
+      <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true">
+        <defs>
+          <clipPath id="futp" clipPathUnits="objectBoundingBox">
+            <path d="M0.10,0 L0.90,0 Q1,0 1,0.07 L1,0.80 Q1,0.90 0.80,0.945 L0.5,1 L0.20,0.945 Q0,0.90 0,0.80 L0,0.07 Q0,0 0.10,0 Z" />
+          </clipPath>
+        </defs>
+      </svg>
       <div className="fcards" key={page}>
         {cur.map(({ player: p, photo }) => {
-          const tone = p.isGK ? "g" : isMensalista(p) ? "m" : "a";
+          const tone = p.isGK ? "bord" : isMensalista(p) ? "gold" : "silver";
+          const tag = p.isGK ? "GOLEIRO" : isMensalista(p) ? "MENSALISTA" : "AVULSO";
           const label = displayName(p);
           return (
             <div
               key={p.id}
-              className={`fcard fcard-${tone}`}
+              className={`fut fut-${tone}`}
               role="button"
               tabIndex={0}
               onClick={() => onViewPlayer && onViewPlayer(p)}
@@ -2202,17 +2247,37 @@ function FeaturedCards({ players, onViewPlayer }) {
                 }
               }}
             >
-              <div className="fcard-photo">
-                {photo ? (
-                  <img src={photo.url} alt={label} style={{ objectPosition: photo.position }} />
-                ) : (
-                  <span className="fcard-ini">{initials(label)}</span>
-                )}
-                <span className="fcard-shade" />
+              <div className="fut-o">
+                <div className="fut-i">
+                  <div className="fut-bg">
+                    {photo ? <img src={photo.url} alt="" style={{ objectPosition: photo.position }} /> : FUT_SIL}
+                  </div>
+                  <div className="fut-tint" />
+                  <div className="fut-shade" />
+                  {p.shirtNumber != null && (
+                    <div className="fut-cam">
+                      <span className="cam-l">CAMISA</span>
+                      <span className="cam-n">{p.shirtNumber}</span>
+                    </div>
+                  )}
+                  <div className="fut-name">{label}</div>
+                  <div className="fut-tag">{tag}</div>
+                  <div className="fut-line" />
+                  <div className="fut-rate">
+                    <b>{p.rating}</b>
+                    <i>{posCode(p.position)}</i>
+                  </div>
+                  <div className="fut-av">
+                    {p.photo ? (
+                      <img src={p.photo} alt={label} style={{ objectPosition: p.photoPosition || "50% 50%" }} />
+                    ) : (
+                      <span className="fut-av-ini">{initials(label)}</span>
+                    )}
+                  </div>
+                  <div className="fut-glass" />
+                  <div className="fut-glass2" />
+                </div>
               </div>
-              <span className="fcard-r">{p.rating}</span>
-              <span className="fcard-ps">{posCode(p.position)}</span>
-              <span className="fcard-nm">{label}</span>
             </div>
           );
         })}
@@ -8439,6 +8504,7 @@ export default function PeladaApp() {
     const row = {
       nickname: fields.nickname,
       favorite_team: fields.favoriteTeam,
+      ...(fields.shirtNumber != null || fields.shirtNumberClear ? { shirt_number: fields.shirtNumber ?? null } : {}),
       instagram: fields.instagram,
       photo_url: fields.photo,
       photo_position: fields.photoPosition,
@@ -12094,27 +12160,44 @@ function Styles() {
       .fcards-wrap { margin: 4px 0 14px; }
       .fcards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; justify-items: center; animation: pg-fade .5s ease; }
       @keyframes pg-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-      .fcard {
-        position: relative; width: 100%; max-width: 150px; aspect-ratio: 116 / 156; container-type: inline-size; cursor: pointer;
-        clip-path: polygon(50% 0, 100% 7%, 100% 87%, 50% 100%, 0 87%, 0 7%);
-        transition: translate .2s cubic-bezier(.2,.8,.2,1), filter .2s ease;
-      }
-      .fcard:hover { translate: 0 -6px; filter: brightness(1.1) drop-shadow(0 8px 10px rgba(0,0,0,.6)); }
-      .fcard:active { translate: 0 0; filter: brightness(.92); transition-duration: .06s; }
-      .fcard-m { background: linear-gradient(160deg,#fff1b8 0%,#e0ae3a 40%,#a8731a 72%,#6b430a 100%); }
-      .fcard-a { background: linear-gradient(160deg,#ffffff 0%,#e4e6ea 42%,#a9adb6 78%,#6d717c 100%); }
-      .fcard-g { background: linear-gradient(160deg,#e0587a 0%,#8a1430 48%,#4a0816 100%); }
-      /* foto dentro da carta, com margem */
-      .fcard-photo { position: absolute; left: 11%; right: 11%; top: 15%; bottom: 17%; overflow: hidden; background: rgba(0,0,0,.28);
-        clip-path: polygon(0 0, 100% 0, 100% 86%, 50% 100%, 0 86%); display: flex; align-items: center; justify-content: center; }
-      .fcard-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-      .fcard-ini { font-family: 'Anton',sans-serif; font-size: 22cqw; color: rgba(255,255,255,.85); }
-      /* degradê leve embaixo (e no topo) pra dar leitura aos textos */
-      .fcard-shade { position: absolute; inset: 0;
-        background: linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 52%, rgba(0,0,0,.78) 100%); }
-      .fcard-r { position: absolute; left: 17%; top: 19%; font-family: 'Anton',sans-serif; font-size: 20cqw; line-height: 1; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.7); }
-      .fcard-ps { position: absolute; left: 17.5%; top: 36%; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 10cqw; letter-spacing: 1px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
-      .fcard-nm { position: absolute; left: 8%; right: 8%; top: 70%; text-align: center; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 14.5cqw; letter-spacing: .8px; text-transform: uppercase; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .fut { position: relative; width: 100%; max-width: 150px; aspect-ratio: 300 / 420; container-type: inline-size; cursor: pointer;
+        filter: drop-shadow(0 10px 14px rgba(0,0,0,.55)); transition: translate .2s cubic-bezier(.2,.8,.2,1), filter .2s ease; }
+      .fut:hover { translate: 0 -6px; filter: drop-shadow(0 14px 16px rgba(0,0,0,.65)) brightness(1.08); }
+      .fut:active { translate: 0 0; filter: drop-shadow(0 6px 10px rgba(0,0,0,.55)) brightness(.92); transition-duration: .06s; }
+      .fut-o { position: absolute; inset: 0; clip-path: url(#futp); }
+      .fut-i { position: absolute; inset: 2.4cqw; clip-path: url(#futp); overflow: hidden; }
+      .fut-gold .fut-o { background: linear-gradient(160deg,#8a5d12,#5b3a05 60%,#3d2603); }
+      .fut-silver .fut-o { background: linear-gradient(160deg,#6d717c,#454955 60%,#2e3038); }
+      .fut-bord .fut-o { background: linear-gradient(160deg,#6b0f26,#3d0715 60%,#260410); }
+      .fut-gold .fut-i { background: linear-gradient(160deg,#fff1b8 0%,#e0ae3a 38%,#b8862b 70%,#8a5d12 100%); color: #241503; }
+      .fut-silver .fut-i { background: linear-gradient(160deg,#ffffff 0%,#dfe2e8 40%,#a9adb6 74%,#7b7f8b 100%); color: #15171c; }
+      .fut-bord .fut-i { background: linear-gradient(160deg,#e0587a 0%,#a3183a 38%,#8a1430 66%,#4a0816 100%); color: #fff4dc; }
+      .fut-bg { position: absolute; left: 4%; right: 4%; top: 4%; height: 70%; filter: blur(.9cqw); opacity: .8; overflow: hidden;
+        display: flex; align-items: flex-end; justify-content: center;
+        -webkit-mask-image: linear-gradient(180deg,#000 50%,transparent); mask-image: linear-gradient(180deg,#000 50%,transparent); }
+      .fut-bg svg { width: 100%; height: 100%; opacity: .4; }
+      .fut-bg img { width: 100%; height: 100%; object-fit: cover; display: block; transform: scale(1.08); }
+      .fut-tint { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 30%, rgba(255,255,255,.22), transparent 60%); }
+      .fut-shade { position: absolute; left: 0; right: 0; bottom: 0; top: 38%; }
+      .fut-gold .fut-shade { background: linear-gradient(155deg, rgba(200,150,42,0) 18%, rgba(200,150,42,1) 78%); }
+      .fut-silver .fut-shade { background: linear-gradient(155deg, rgba(154,158,169,0) 18%, rgba(154,158,169,1) 78%); }
+      .fut-bord .fut-shade { background: linear-gradient(155deg, rgba(107,15,38,0) 18%, rgba(107,15,38,1) 78%); }
+      .fut-cam { position: absolute; left: 11cqw; top: 9cqw; display: flex; flex-direction: column; align-items: flex-start; line-height: 1; text-shadow: 0 1px 3px rgba(255,255,255,.35); }
+      .cam-l { font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 4.6cqw; letter-spacing: .9cqw; }
+      .cam-n { font-family: 'Anton',sans-serif; font-size: 12.5cqw; line-height: 1.02; }
+      .fut-name { position: absolute; left: 6cqw; right: 6cqw; top: 61cqw; text-align: center; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 12.5cqw; letter-spacing: .7cqw; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; }
+      .fut-tag { position: absolute; left: 6cqw; right: 6cqw; top: 72.5cqw; text-align: center; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 6cqw; letter-spacing: 1.2cqw; text-transform: uppercase; opacity: .9; }
+      .fut-line { position: absolute; left: 11cqw; right: 11cqw; top: 81cqw; height: .5cqw; background: currentColor; opacity: .35; }
+      .fut-rate { position: absolute; left: 11cqw; top: 92cqw; display: flex; flex-direction: column; align-items: flex-end; line-height: 1; }
+      .fut-rate b { font-family: 'Anton',sans-serif; font-weight: 400; font-size: 26cqw; line-height: .95; }
+      .fut-rate i { font-family: 'Barlow Condensed',sans-serif; font-style: normal; font-weight: 700; font-size: 8cqw; letter-spacing: 1cqw; margin-top: 1.5cqw; }
+      .fut-av { position: absolute; right: 9cqw; top: 86cqw; width: 36cqw; height: 36cqw; border-radius: 50%; overflow: hidden; background: rgba(0,0,0,.32);
+        border: .9cqw solid rgba(0,0,0,.45); box-shadow: 0 0 0 .7cqw rgba(255,255,255,.35); display: flex; align-items: center; justify-content: center; color: #fff; }
+      .fut-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .fut-av-ini { font-family: 'Anton',sans-serif; font-size: 14cqw; }
+      .fut-glass { position: absolute; inset: 0; pointer-events: none; opacity: .55; mix-blend-mode: soft-light;
+        background: linear-gradient(118deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,.22) 24%, rgba(255,255,255,0) 25%, rgba(255,255,255,0) 58%, rgba(255,255,255,.16) 59%, rgba(255,255,255,0) 78%); }
+      .fut-glass2 { position: absolute; left: 0; right: 0; top: 0; height: 22%; pointer-events: none; background: linear-gradient(180deg, rgba(255,255,255,.38), rgba(255,255,255,0)); }
       .fcards-dots { display: flex; gap: 6px; justify-content: center; margin-top: 10px; }
       .fcards-dots button { width: 8px; height: 4px; border: none; padding: 0; background: var(--border); cursor: pointer; transition: width .25s ease, background .25s ease; }
       .fcards-dots button.on { width: 18px; background: var(--gold); }
