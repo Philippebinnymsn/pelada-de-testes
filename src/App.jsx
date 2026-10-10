@@ -12549,8 +12549,10 @@ function Styles() {
       .membership-badge-avulso { color: #c9ced8 !important; background: rgba(255,255,255,.05) !important; border: 1px solid rgba(255,255,255,.18) !important; }
       .membership-badge .membership-badge-icon { display: inline-flex !important; font-size: 0; }
       .membership-badge .membership-badge-icon svg { width: 12px; height: 12px; }
-      .roster-row .membership-badge { border: 0 !important; background: none !important; padding: 0 !important; font-size: 12px !important; letter-spacing: 1px !important; text-transform: uppercase !important; border-radius: 0 !important; }
-      .roster-row .membership-badge .membership-badge-icon { display: none !important; }
+      .roster-row .membership-badge { align-self: flex-start; margin-top: 2px; letter-spacing: .3px !important; text-transform: none !important; font-size: 10.5px !important; padding: 2px 9px 2px 6px !important; }
+      .roster-row .membership-badge .membership-badge-icon { display: inline-flex !important; }
+      .roster-row .membership-badge-avulso { color: #c9ced8 !important; }
+      .roster-row .roster-row-footer { right: 78px !important; top: auto !important; bottom: 8px; }
       .membership-badge-profile { margin: -4px 0 10px; }
       .membership-badge-avulso .membership-badge-icon { color: #c9ced8 !important; }
 `}</style>
