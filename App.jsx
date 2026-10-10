@@ -810,22 +810,20 @@ function InstagramLink({ handle, className = "" }) {
 // Selo de tipo de membro: mensalista (medalha de ouro) ou avulso (texto simples).
 function MembershipBadge({ player, className = "", short = false }) {
   if (isMensalista(player)) {
+    const temp = isTempMensalista(player);
     return (
       <span className={`membership-badge membership-badge-mensalista ${className}`}>
-        <span className="membership-badge-icon" aria-hidden="true"><Emo e="🏅" /></span>
-        {isTempMensalista(player) ? (
-          <>
-            {short ? "Temporário" : "Membro Mensalista Temporário"} <span aria-hidden="true"><Emo e="🔄" /></span>
-          </>
-        ) : short ? (
-          "Mensalista"
-        ) : (
-          "Membro Mensalista"
-        )}
+        <span className="membership-badge-icon" aria-hidden="true"><Emo e={temp ? "🔄" : "🏅"} /></span>
+        {temp ? (short ? "Temporário" : "Membro Mensalista Temporário") : short ? "Mensalista" : "Membro Mensalista"}
       </span>
     );
   }
-  return <span className={`membership-badge membership-badge-avulso ${className}`}>{short ? "Avulso" : "Membro Avulso"}</span>;
+  return (
+    <span className={`membership-badge membership-badge-avulso ${className}`}>
+      <span className="membership-badge-icon" aria-hidden="true"><Emo e="🎟" /></span>
+      {short ? "Avulso" : "Membro Avulso"}
+    </span>
+  );
 }
 
 function Stars({ count, max = 5 }) {
@@ -12542,6 +12540,19 @@ function Styles() {
       @keyframes seal-pop { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
       .assiduo-modal { text-align: center; max-width: 360px; }
       .assiduo-big { display: flex; justify-content: center; margin-bottom: 8px; }
+
+      /* selo de membro: pequeno e discreto, com desenho de cada tipo (ticket / medalha / retorno) */
+      .membership-badge { display: inline-flex; align-items: center; gap: 5px; clip-path: none !important; border-radius: 999px !important;
+        font-family: 'Inter',sans-serif !important; font-style: normal !important; font-weight: 600; font-size: 10.5px !important; letter-spacing: .3px !important;
+        text-transform: none !important; padding: 2px 9px 2px 6px !important; line-height: 1.5; width: fit-content; }
+      .membership-badge-mensalista { color: var(--gold) !important; background: rgba(240,204,60,.07) !important; border: 1px solid rgba(240,204,60,.32) !important; }
+      .membership-badge-avulso { color: #c9ced8 !important; background: rgba(255,255,255,.05) !important; border: 1px solid rgba(255,255,255,.18) !important; }
+      .membership-badge .membership-badge-icon { display: inline-flex !important; font-size: 0; }
+      .membership-badge .membership-badge-icon svg { width: 12px; height: 12px; }
+      .roster-row .membership-badge { border: 0 !important; background: none !important; padding: 0 !important; font-size: 12px !important; letter-spacing: 1px !important; text-transform: uppercase !important; border-radius: 0 !important; }
+      .roster-row .membership-badge .membership-badge-icon { display: none !important; }
+      .membership-badge-profile { margin: -4px 0 10px; }
+      .membership-badge-avulso .membership-badge-icon { color: #c9ced8 !important; }
 `}</style>
   );
 }
