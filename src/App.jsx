@@ -12172,13 +12172,12 @@ function Styles() {
       .fut-gold .fut-i { background: linear-gradient(160deg,#fff1b8 0%,#e0ae3a 38%,#b8862b 70%,#8a5d12 100%); color: #241503; }
       .fut-silver .fut-i { background: linear-gradient(160deg,#ffffff 0%,#dfe2e8 40%,#a9adb6 74%,#7b7f8b 100%); color: #15171c; }
       .fut-bord .fut-i { background: linear-gradient(160deg,#e0587a 0%,#a3183a 38%,#8a1430 66%,#4a0816 100%); color: #fff4dc; }
-      .fut-bg { position: absolute; left: 4%; right: 4%; top: 4%; height: 70%; filter: blur(.3cqw); opacity: .92; overflow: hidden;
-        display: flex; align-items: flex-end; justify-content: center;
-        -webkit-mask-image: linear-gradient(180deg,#000 50%,transparent); mask-image: linear-gradient(180deg,#000 50%,transparent); }
+      .fut-bg { position: absolute; inset: 3cqw; overflow: hidden; clip-path: url(#futp);
+        display: flex; align-items: flex-end; justify-content: center; }
       .fut-bg svg { width: 100%; height: 100%; opacity: .4; }
-      .fut-bg img { width: 100%; height: 100%; object-fit: cover; display: block; transform: scale(1.08); }
+      .fut-bg img { width: 100%; height: 100%; object-fit: cover; display: block; }
       .fut-tint { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 30%, rgba(255,255,255,.22), transparent 60%); }
-      .fut-shade { position: absolute; left: 0; right: 0; bottom: 0; top: 38%; }
+      .fut-shade { position: absolute; left: 0; right: 0; bottom: 0; top: 48%; }
       .fut-gold .fut-shade { background: linear-gradient(155deg, rgba(200,150,42,0) 18%, rgba(200,150,42,1) 78%); }
       .fut-silver .fut-shade { background: linear-gradient(155deg, rgba(154,158,169,0) 18%, rgba(154,158,169,1) 78%); }
       .fut-bord .fut-shade { background: linear-gradient(155deg, rgba(107,15,38,0) 18%, rgba(107,15,38,1) 78%); }
@@ -12187,6 +12186,8 @@ function Styles() {
       .cam-n { font-family: 'Anton',sans-serif; font-size: 12.5cqw; line-height: 1.02; }
       .fut-name { position: absolute; left: 6cqw; right: 6cqw; top: 61cqw; text-align: center; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 12.5cqw; letter-spacing: .7cqw; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; }
       .fut-tag { position: absolute; left: 6cqw; right: 6cqw; top: 72.5cqw; text-align: center; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 6cqw; letter-spacing: 1.2cqw; text-transform: uppercase; opacity: .9; }
+      .fut-gold .fut-name, .fut-silver .fut-name, .fut-gold .fut-tag, .fut-silver .fut-tag { text-shadow: 0 0 1.2cqw rgba(255,255,255,.75), 0 0 .4cqw rgba(255,255,255,.7); }
+      .fut-bord .fut-name, .fut-bord .fut-tag { text-shadow: 0 .3cqw 1.2cqw rgba(0,0,0,.85); }
       .fut-line { position: absolute; left: 11cqw; right: 11cqw; top: 81cqw; height: .5cqw; background: currentColor; opacity: .35; }
       .fut-rate { position: absolute; left: 11cqw; top: 86cqw; height: 36cqw; display: flex; flex-direction: column; justify-content: center; align-items: flex-end; line-height: 1; }
       .fut-rate b { font-family: 'Anton',sans-serif; font-weight: 400; font-size: 26cqw; line-height: .95; }
