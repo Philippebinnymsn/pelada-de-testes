@@ -2254,16 +2254,17 @@ function FeaturedCards({ players, onViewPlayer }) {
                   </div>
                   <div className="fut-tint" />
                   <div className="fut-shade" />
+                  <div className={`fut-bar ${p.shirtNumber != null ? "" : "noshirt"}`} />
                   {p.shirtNumber != null && (
                     <div className="fut-cam">
-                      <svg viewBox="0 0 64 64" aria-hidden="true">
-                        <path d="M22 6L8 12 2 26l12 5v27h36V31l12-5-6-14-14-6c-2 5-6 8-10 8s-8-3-10-8z" />
+                      <svg viewBox="0 0 100 100" aria-hidden="true">
+                        <path d="M33 6 Q50 20 67 6 L92 20 L82 42 L72 37 L72 94 L28 94 L28 37 L18 42 L8 20 Z" />
                       </svg>
                       <span className="cam-n">{p.shirtNumber}</span>
                     </div>
                   )}
-                  <div className="fut-name">{label}</div>
-                  <div className="fut-tag">{tag}</div>
+                  <div className={`fut-name ${p.shirtNumber != null ? "" : "noshirt"}`}>{label}</div>
+                  <div className={`fut-tag ${p.shirtNumber != null ? "" : "noshirt"}`}>{tag}</div>
                   <div className="fut-rate">
                     <b>{p.rating}</b>
                     <i>{posCode(p.position)}</i>
@@ -10344,7 +10345,7 @@ export default function PeladaApp() {
 function Styles() {
   return (
     <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,600;1,700;1,800&family=Inter:wght@400;500;600;700&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@500;600&family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,600;1,700;1,800&family=Inter:wght@400;500;600;700&display=swap');
 
       .pelada-root {
         --bg: #0a0908;
@@ -12182,20 +12183,22 @@ function Styles() {
       .fut-gold .fut-shade { background: linear-gradient(155deg, rgba(200,150,42,0) 18%, rgba(200,150,42,1) 78%); }
       .fut-silver .fut-shade { background: linear-gradient(155deg, rgba(154,158,169,0) 18%, rgba(154,158,169,1) 78%); }
       .fut-bord .fut-shade { background: linear-gradient(155deg, rgba(107,15,38,0) 18%, rgba(107,15,38,1) 78%); }
-      .fut-cam { position: absolute; left: 11cqw; top: 8cqw; width: 27cqw; height: 27cqw; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 .6cqw .8cqw rgba(0,0,0,.35)); }
+      .fut-bar { position: absolute; left: 24cqw; right: 0; top: 4.5cqw; height: 16cqw; border-radius: 2cqw 0 0 2cqw; box-shadow: 0 1cqw 2cqw rgba(0,0,0,.35); }
+      .fut-bar.noshirt { left: 11cqw; }
+      .fut-gold .fut-bar { background: linear-gradient(180deg,#33200a,#1a0f02); }
+      .fut-silver .fut-bar { background: linear-gradient(180deg,#3a3d46,#22252b); }
+      .fut-bord .fut-bar { background: linear-gradient(180deg,#7a1230,#4d0a1e); }
+      .fut-cam { position: absolute; left: 15cqw; top: 1cqw; width: 23cqw; height: 23cqw; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 .5cqw .5cqw rgba(0,0,0,.55)) drop-shadow(0 1.8cqw 2cqw rgba(0,0,0,.7)); }
       .fut-cam svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-      .fut-gold .fut-cam svg { fill: #241503; stroke: #f6d374; }
-      .fut-silver .fut-cam svg { fill: #15171c; stroke: #ffffff; }
-      .fut-bord .fut-cam svg { fill: #fff4dc; stroke: #3d0715; }
-      .fut-cam svg { stroke-width: 2.4; stroke-linejoin: round; }
-      .cam-n { position: relative; margin-top: 3.2cqw; font-family: 'Anton',sans-serif; font-size: 9.5cqw; line-height: 1; letter-spacing: .1cqw; }
-      .fut-gold .cam-n { color: #f6d374; }
-      .fut-silver .cam-n { color: #ffffff; }
-      .fut-bord .cam-n { color: #6b0f26; }
-      .fut-name { position: absolute; left: 38cqw; right: 11cqw; top: 12cqw; text-align: right; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 8.8cqw; letter-spacing: .3cqw; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; }
-      .fut-tag { position: absolute; left: 38cqw; right: 11cqw; top: 23cqw; text-align: right; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 5.2cqw; letter-spacing: 1cqw; text-transform: uppercase; opacity: .92; }
-      .fut-gold .fut-name, .fut-silver .fut-name, .fut-gold .fut-tag, .fut-silver .fut-tag { text-shadow: 0 0 1.2cqw rgba(255,255,255,.75), 0 0 .4cqw rgba(255,255,255,.7); }
-      .fut-bord .fut-name, .fut-bord .fut-tag { text-shadow: 0 .3cqw 1.2cqw rgba(0,0,0,.85); }
+      .fut-gold .fut-cam svg { fill: #241503; }
+      .fut-silver .fut-cam svg { fill: #2a2d34; }
+      .fut-bord .fut-cam svg { fill: #5d0e24; }
+      .cam-n { position: relative; margin-top: 2.4cqw; font-family: 'Anton',sans-serif; font-size: 8.5cqw; line-height: 1; letter-spacing: .1cqw; }
+      .fut-gold .cam-n, .fut-bord .cam-n, .fut-gold .fut-name, .fut-gold .fut-tag, .fut-bord .fut-name, .fut-bord .fut-tag { color: #f6d374; }
+      .fut-silver .cam-n, .fut-silver .fut-name, .fut-silver .fut-tag { color: #fff; }
+      .fut-name { position: absolute; left: 38cqw; right: 8cqw; top: 6.5cqw; text-align: center; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 9cqw; letter-spacing: .5cqw; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; }
+      .fut-tag { position: absolute; left: 38cqw; right: 8cqw; top: 15.7cqw; text-align: center; font-family: 'Oswald',sans-serif; font-weight: 500; font-size: 3.7cqw; letter-spacing: 1.3cqw; text-transform: uppercase; line-height: 1; opacity: .92; }
+      .fut-name.noshirt, .fut-tag.noshirt { left: 14cqw; }
       .fut-rate { position: absolute; left: 18cqw; top: 86cqw; height: 36cqw; display: flex; flex-direction: column; justify-content: center; align-items: flex-end; line-height: 1; }
       .fut-rate b { font-family: 'Anton',sans-serif; font-weight: 400; font-size: 26cqw; line-height: .95; }
       .fut-rate i { font-family: 'Barlow Condensed',sans-serif; font-style: normal; font-weight: 700; font-size: 8cqw; letter-spacing: 1cqw; margin-top: 1.5cqw; }
