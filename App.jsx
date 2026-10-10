@@ -468,6 +468,19 @@ function fxClose(fn, ms = 420) {
   }, ms);
 }
 
+// Forma do card (escudo) — definida UMA vez no <body>, fora do React. Antes cada
+// tela tinha a sua cópia; quando uma saía de cena, o recorte sumia e os cards
+// ficavam quadrados.
+if (typeof document !== "undefined" && !document.getElementById("futp-defs")) {
+  const holder = document.createElement("div");
+  holder.id = "futp-defs";
+  holder.setAttribute("aria-hidden", "true");
+  holder.style.cssText = "position:absolute;width:0;height:0;overflow:hidden;pointer-events:none";
+  holder.innerHTML =
+    '<svg width="0" height="0" focusable="false"><defs><clipPath id="futp" clipPathUnits="objectBoundingBox"><path d="M0.10,0 L0.90,0 Q1,0 1,0.07 L1,0.80 Q1,0.90 0.80,0.945 L0.5,1 L0.20,0.945 Q0,0.90 0,0.80 L0,0.07 Q0,0 0.10,0 Z"/></clipPath></defs></svg>';
+  document.body.appendChild(holder);
+}
+
 const clampRating = (n) => Math.min(10, Math.max(1, Math.round(n)));
 
 const starsFilled = (rating) => Math.min(5, Math.max(1, Math.round(rating / 2)));
@@ -1926,13 +1939,6 @@ function MyProfileForm({ player, initialPhone, onSave, onCancel }) {
         <p className="field-hint">Só administradores conseguem ver — o resto do elenco não vê.</p>
 
         <div className="fut-preview">
-          <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true">
-            <defs>
-              <clipPath id="futp" clipPathUnits="objectBoundingBox">
-                <path d="M0.10,0 L0.90,0 Q1,0 1,0.07 L1,0.80 Q1,0.90 0.80,0.945 L0.5,1 L0.20,0.945 Q0,0.90 0,0.80 L0,0.07 Q0,0 0.10,0 Z" />
-              </clipPath>
-            </defs>
-          </svg>
           <FutCard
             style={{ width: 170, pointerEvents: "none" }}
             p={{
@@ -2143,13 +2149,6 @@ function ProfileModal({ player, onClose: onCloseProp, onEdit, isAdmin, canEditOw
 
             </div>
             <div className="profile-stat profile-stat-nota">
-              <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true">
-                <defs>
-                  <clipPath id="futp" clipPathUnits="objectBoundingBox">
-                    <path d="M0.10,0 L0.90,0 Q1,0 1,0.07 L1,0.80 Q1,0.90 0.80,0.945 L0.5,1 L0.20,0.945 Q0,0.90 0,0.80 L0,0.07 Q0,0 0.10,0 Z" />
-                  </clipPath>
-                </defs>
-              </svg>
               <div className={`fut nota-card fut-${player.isGK ? "bord" : isMensalista(player) ? "gold" : "silver"}`}>
                 <div className="fut-o">
                   <div className="fut-i">
@@ -2369,13 +2368,6 @@ function FeaturedCards({ players, onViewPlayer }) {
   if (!cur.length) return null;
   return (
     <div className="fcards-wrap">
-      <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true">
-        <defs>
-          <clipPath id="futp" clipPathUnits="objectBoundingBox">
-            <path d="M0.10,0 L0.90,0 Q1,0 1,0.07 L1,0.80 Q1,0.90 0.80,0.945 L0.5,1 L0.20,0.945 Q0,0.90 0,0.80 L0,0.07 Q0,0 0.10,0 Z" />
-          </clipPath>
-        </defs>
-      </svg>
       <div className="fcards">
         {cur.map((x) => (
           <FutCard
