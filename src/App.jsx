@@ -12594,6 +12594,19 @@ function Styles() {
       .nota-p .pos-gk .emo { width: 14cqw; height: 14cqw; }
       .rating-badge-label .pos-gk { gap: 3px; letter-spacing: .4px; }
       .rating-badge-label .pos-gk .emo { width: 11px; height: 11px; }
+
+      /* ajustes: lista aberta/publicada mais escura, stats retangular, sub dourado */
+      .presence-page, .escalacao-page { background: #121316 !important; }
+      .presence-page-stats { width: calc(100% - 32px); max-width: 640px; margin: 12px auto 0; padding: 0; border-radius: 0; clip-path: none !important; transform: none !important; background: #1a1b1f; border: 1px solid rgba(255,255,255,.08); border-left: 6px solid var(--gold); min-height: 46px; }
+      .presence-stat { padding: 6px 4px; gap: 1px; }
+      .presence-stat:not(:first-child) { border-left: 1px solid rgba(255,255,255,.08); }
+      .presence-stat-num { font-size: 17px; }
+      .presence-stat-label { font-size: 9.5px; letter-spacing: 1.2px; }
+      .presence-stat-icon { width: 15px; height: 15px; }
+      .presence-card-sub { font-weight: 400 !important; color: var(--gold) !important; }
+      .presence-card-status { font-size: 11.9px; padding: 5px 12px; }
+      .presence-card-status-icon { font-size: 9.4px; }
+      .presence-open-banner:has(.pob-dot) .presence-open-banner-title { margin-left: 14px; }
 `}</style>
   );
 }
