@@ -12199,10 +12199,10 @@ function Styles() {
       .fut-name { position: absolute; left: 38cqw; right: 8cqw; top: 6.5cqw; text-align: center; font-family: 'Barlow Condensed',sans-serif; font-weight: 700; font-size: 9cqw; letter-spacing: .5cqw; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; }
       .fut-tag { position: absolute; left: 38cqw; right: 8cqw; top: 15.7cqw; text-align: center; font-family: 'Oswald',sans-serif; font-weight: 500; font-size: 3.7cqw; letter-spacing: 1.3cqw; text-transform: uppercase; line-height: 1; opacity: .92; }
       .fut-name.noshirt, .fut-tag.noshirt { left: 14cqw; }
-      .fut-rate { position: absolute; left: 18cqw; top: 86cqw; height: 36cqw; display: flex; flex-direction: column; justify-content: center; align-items: flex-end; line-height: 1; }
+      .fut-rate { position: absolute; right: 18cqw; top: 86cqw; height: 36cqw; display: flex; flex-direction: column; justify-content: center; align-items: center; line-height: 1; }
       .fut-rate b { font-family: 'Anton',sans-serif; font-weight: 400; font-size: 26cqw; line-height: .95; }
       .fut-rate i { font-family: 'Barlow Condensed',sans-serif; font-style: normal; font-weight: 700; font-size: 8cqw; letter-spacing: 1cqw; margin-top: 1.5cqw; }
-      .fut-av { position: absolute; right: 9cqw; top: 86cqw; width: 36cqw; height: 36cqw; border-radius: 50%; overflow: hidden; background: rgba(0,0,0,.32);
+      .fut-av { position: absolute; left: 9cqw; top: 86cqw; width: 36cqw; height: 36cqw; border-radius: 50%; overflow: hidden; background: rgba(0,0,0,.32);
         border: .9cqw solid rgba(0,0,0,.45); box-shadow: 0 0 0 .7cqw rgba(255,255,255,.35); display: flex; align-items: center; justify-content: center; color: #fff; }
       .fut-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
       .fut-av-ini { font-family: 'Anton',sans-serif; font-size: 14cqw; }
