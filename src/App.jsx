@@ -12009,6 +12009,13 @@ function Styles() {
       .roster-row-footer { border-top: none; }
       .avatar-square { border-radius: 0; clip-path: polygon(10% 0,100% 0,90% 100%,0 100%); }
       .avatar-photo, .avatar-fallback { border-radius: inherit; }
+      .avatar.avatar-round, .avatar-round.avatar-photo, .avatar-round.avatar-fallback { border-radius: 50% !important; clip-path: none !important; }
+      /* perfil (clicar no card): foto cheia até as bordas, em degradê e com carrossel, como na versão original */
+      .modal.profile-modal { padding: 0 !important; overflow: hidden; overflow-y: auto; max-width: 440px; }
+      .profile-hero { border-radius: 0; height: 400px; }
+      .profile-hero-scrim { background: linear-gradient(180deg, rgba(10,9,8,0) 30%, rgba(10,9,8,.35) 55%, rgba(10,9,8,.78) 80%, rgba(10,9,8,.96) 100%); }
+      .profile-hero-name-row .avatar { border-radius: 50% !important; }
+      .profile-hero-name-text { font-family: 'Anton','Barlow Condensed',sans-serif; text-transform: uppercase; }
 
       /* ===== MODAIS ===== */
       .modal { border-radius: 4px !important; border: 2px solid var(--gold); background: var(--surface); box-shadow: 0 10px 0 rgba(0,0,0,.5); }
