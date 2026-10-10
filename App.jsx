@@ -776,6 +776,10 @@ function posCode(pos) {
   for (const [k, v] of map) if (t.startsWith(k)) return v;
   return t.slice(0, 3);
 }
+function PosTag({ p }) {
+  if (p?.isGK) return <span className="pos-gk">GOL<Emo e="🧤" /></span>;
+  return <>{posCode(p?.position)}</>;
+}
 function Star({ filled }) {
   return <span style={{ opacity: filled ? 1 : 0.25 }}><Emo e="★" /></span>;
 }
@@ -1691,6 +1695,8 @@ function PlayerForm({
 // administrador altera — o banco (RLS + gatilho) já barra isso de verdade,
 // aqui é só pra nem mostrar o campo.
 function MyProfileForm({ player, initialPhone, onSave, onCancel }) {
+  const [isGK, setIsGK] = useState(player?.isGK ?? false);
+  const [position, setPosition] = useState(player?.position ?? "");
   const [nickname, setNickname] = useState(player?.nickname ?? "");
   const [shirt, setShirt] = useState(player?.shirtNumber != null ? String(player.shirtNumber) : "");
   const [favoriteTeam, setFavoriteTeam] = useState(player?.favoriteTeam ?? "");
@@ -1784,7 +1790,7 @@ function MyProfileForm({ player, initialPhone, onSave, onCancel }) {
         <h2 className="modal-title">Editar meu perfil</h2>
         <p className="admin-hint">
           Você pode trocar sua foto de perfil, as fotos de capa e o nome que aparece nos
-          cards. O resto (nome completo, nota, posição) só o administrador altera.
+          cards. O resto (nome completo e nota) só o administrador altera.
         </p>
 
         <div className="photo-row">
@@ -1922,6 +1928,23 @@ function MyProfileForm({ player, initialPhone, onSave, onCancel }) {
         </label>
         <p className="field-hint">Aparece no canto da sua carta de destaque (0 a 99).</p>
 
+        <label className="switch-row">
+          <span><Emo e="🧤" /> Goleiro</span>
+          <button type="button" className={`toggle ${isGK ? "toggle-on" : ""}`} onClick={() => setIsGK((v) => !v)} aria-pressed={isGK}>
+            <span className="toggle-knob" />
+          </button>
+        </label>
+
+        <label className="field-label">Posição</label>
+        <select className="input" value={position} onChange={(e) => setPosition(e.target.value)}>
+          <option value="">Não informar</option>
+          {POSITIONS.map((pos) => (
+            <option key={pos.code} value={pos.code}>
+              {pos.code} ({pos.label})
+            </option>
+          ))}
+        </select>
+
         <label className="field-label">Time do coração (opcional)</label>
         <FavoriteTeamField value={favoriteTeam} onChange={(v) => setFavoriteTeam(v || "")} />
 
@@ -1944,6 +1967,8 @@ function MyProfileForm({ player, initialPhone, onSave, onCancel }) {
               ...player,
               nickname: nickname.trim() ? formatDisplayNameValue(nickname) : null,
               shirtNumber: shirt === "" ? null : Math.min(99, Number(shirt)),
+              isGK,
+              position: position || null,
               photo,
               photoPosition,
             }}
@@ -1965,6 +1990,8 @@ function MyProfileForm({ player, initialPhone, onSave, onCancel }) {
                 favoriteTeam: favoriteTeam.trim() || null,
                 shirtNumber: shirt === "" ? null : Math.min(99, Number(shirt)),
                 shirtNumberClear: shirt === "" && player?.shirtNumber != null,
+                isGK,
+                position: position || null,
                 instagram: cleanInstagramHandle(instagram) || null,
                 phone: phone.trim() || null,
                 photo,
@@ -2153,7 +2180,7 @@ function ProfileModal({ player, onClose: onCloseProp, onEdit, isAdmin, canEditOw
                 <div className="fut-o">
                   <div className="fut-i">
                     <div className="nota-n">{player.rating}</div>
-                    <div className="nota-p">{posCode(player.position)}</div>
+                    <div className="nota-p"><PosTag p={player} /></div>
                     <div className="fut-glass" />
                   </div>
                 </div>
@@ -2305,7 +2332,7 @@ function FutCard({ p, photo, onViewPlayer, style, className = "" }) {
                   <div className={`fut-tag ${p.shirtNumber != null ? "" : "noshirt"}`}>{tag}</div>
                   <div className="fut-rate">
                     <b>{p.rating}</b>
-                    <i>{posCode(p.position)}</i>
+                    <i><PosTag p={p} /></i>
                   </div>
                   <div className="fut-av">
                     {p.photo ? (
@@ -8260,6 +8287,8 @@ export default function PeladaApp() {
       favorite_team: fields.favoriteTeam,
       ...(fields.shirtNumber != null || fields.shirtNumberClear ? { shirt_number: fields.shirtNumber ?? null } : {}),
       instagram: fields.instagram,
+      is_gk: !!fields.isGK,
+      position: fields.position ?? null,
       photo_url: fields.photo,
       photo_position: fields.photoPosition,
       cover1_url: fields.cover1,
@@ -9424,7 +9453,7 @@ export default function PeladaApp() {
                     </div>
                     <div className={`rating-badge rb-${p.isGK ? "bord" : isMensalista(p) ? "gold" : "silver"}`}>
                       <span className="rating-badge-num">{p.rating}</span>
-                      <span className="rating-badge-label">{posCode(p.position)}</span>
+                      <span className="rating-badge-label"><PosTag p={p} /></span>
                     </div>
                   </div>
                   {(isAdmin || (myPlayer && myPlayer.id === p.id)) && (
@@ -12549,10 +12578,22 @@ function Styles() {
       .membership-badge-avulso { color: #c9ced8 !important; background: rgba(255,255,255,.05) !important; border: 1px solid rgba(255,255,255,.18) !important; }
       .membership-badge .membership-badge-icon { display: inline-flex !important; font-size: 0; }
       .membership-badge .membership-badge-icon svg { width: 12px; height: 12px; }
-      .roster-row .membership-badge { border: 0 !important; background: none !important; padding: 0 !important; font-size: 12px !important; letter-spacing: 1px !important; text-transform: uppercase !important; border-radius: 0 !important; }
-      .roster-row .membership-badge .membership-badge-icon { display: none !important; }
+      .roster-row .membership-badge { align-self: flex-start; margin-top: 2px; letter-spacing: .3px !important; text-transform: none !important; font-size: 10.5px !important; padding: 2px 9px 2px 6px !important; }
+      .roster-row .membership-badge .membership-badge-icon { display: inline-flex !important; }
+      .roster-row .membership-badge-avulso { color: #c9ced8 !important; }
+      .roster-row .roster-row-footer { right: 78px !important; top: auto !important; bottom: 8px; }
       .membership-badge-profile { margin: -4px 0 10px; }
       .membership-badge-avulso .membership-badge-icon { color: #c9ced8 !important; }
+
+      /* posição de goleiro: GOL + luva, sem estourar o card */
+      .pos-gk { display: inline-flex; align-items: center; justify-content: center; gap: .7em; white-space: nowrap; max-width: 100%; }
+      .pos-gk .emo { width: 1.15em; height: 1.15em; flex: none; }
+      .fut-rate i .pos-gk { gap: 1.2cqw; letter-spacing: .6cqw; }
+      .fut-rate i .pos-gk .emo { width: 9cqw; height: 9cqw; }
+      .nota-p .pos-gk { gap: 2cqw; letter-spacing: .6cqw; font-size: 13cqw; }
+      .nota-p .pos-gk .emo { width: 14cqw; height: 14cqw; }
+      .rating-badge-label .pos-gk { gap: 3px; letter-spacing: .4px; }
+      .rating-badge-label .pos-gk .emo { width: 11px; height: 11px; }
 `}</style>
   );
 }
