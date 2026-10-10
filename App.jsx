@@ -5801,6 +5801,7 @@ export default function PeladaApp() {
   const [showStopwatch, setShowStopwatch] = useState(false);
   const [swActor, setSwActor] = useState("Alguém");
   const sw = useSharedStopwatch(authUser, swActor);
+  const swPush = usePushAlert(authUser);
   const [showPublishPelada, setShowPublishPelada] = useState(false);
   const [showPublishPeladaExtra, setShowPublishPeladaExtra] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -9323,8 +9324,8 @@ export default function PeladaApp() {
             />
           )}
 
-          {authUser && <StopwatchBanner sw={sw} onOpen={() => setShowStopwatch(true)} />}
-          {authUser && showStopwatch && <StopwatchModal sw={sw} onClose={() => setShowStopwatch(false)} />}
+          {authUser && <StopwatchBanner sw={sw} push={swPush} onOpen={() => setShowStopwatch(true)} />}
+          {authUser && showStopwatch && <StopwatchModal sw={sw} push={swPush} onClose={() => setShowStopwatch(false)} />}
 
           {showEscalacaoModal && publishedList && (
             <EscalacaoModal
@@ -10080,6 +10081,58 @@ function SevenSeg({ n }) {
     </svg>
   );
 }
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || "BMDVtskGZdjJ0_Xb6IF9_KYDsm3TvflDgriw4Fog6YlZnvgu7JRo3VW-64098VYQZqNEfDpJtjZxEGvIdqc0MYs";
+const b64ToU8 = (b) => {
+  const pad = "=".repeat((4 - (b.length % 4)) % 4);
+  const raw = atob((b + pad).replace(/-/g, "+").replace(/_/g, "/"));
+  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+};
+const isIOSDevice = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalonePWA = () => window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone === true;
+
+// Aviso push (app fechado). status: "unsupported" | "needs-install" | "denied" | "off" | "on"
+function usePushAlert(authUser) {
+  const [status, setStatus] = useState("off");
+  const [busy, setBusy] = useState(false);
+  const enableRef = useRef(null);
+  const supported = typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  useEffect(() => {
+    if (!authUser) return;
+    if (!supported) { setStatus(isIOSDevice() && !isStandalonePWA() ? "needs-install" : "unsupported"); return; }
+    if (Notification.permission === "denied") { setStatus("denied"); return; }
+    navigator.serviceWorker.ready.then((reg) => reg.pushManager.getSubscription()).then((sub) => {
+      if (sub && Notification.permission === "granted") { setStatus("on"); return; }
+      setStatus("off");
+      if (Notification.permission === "granted") enableRef.current?.(); // já autorizado: registra sem perguntar
+    }).catch(() => {});
+  }, [authUser?.id, supported]); // eslint-disable-line react-hooks/exhaustive-deps
+  const enable = async () => {
+    if (busy || status === "on" || !supported) return;
+    setBusy(true);
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") { setStatus(perm === "denied" ? "denied" : "off"); return; }
+      const reg = await navigator.serviceWorker.ready;
+      const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(VAPID_PUBLIC_KEY) }));
+      const j = sub.toJSON();
+      const { error } = await supabase.from("push_subscriptions").upsert({ user_id: authUser.id, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth }, { onConflict: "endpoint" });
+      setStatus(error ? "off" : "on");
+    } catch { setStatus("off"); } finally { setBusy(false); }
+  };
+  enableRef.current = enable;
+  const disable = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) { await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint); await sub.unsubscribe(); }
+      setStatus("off");
+    } catch {} finally { setBusy(false); }
+  };
+  return { status, busy, enable, disable };
+}
+
 const STOPWATCH_ID = "00000000-0000-0000-0000-000000000003";
 const rowToStopwatch = (r) => r && ({
   status: r.status || "idle",
@@ -10220,7 +10273,7 @@ function useSharedStopwatch(authUser, actor) {
     startedBy: row?.startedBy, history: row?.history || [], unlockAudio, stopAlarm, actions };
 }
 
-function StopwatchModal({ sw, onClose: onCloseProp }) {
+function StopwatchModal({ sw, push, onClose: onCloseProp }) {
   const [busy, setBusy] = useState(false);
   const onClose = () => { fxClose(onCloseProp); };
   const act = async (fn) => { if (busy) return; setBusy(true); try { await fn(); } finally { setBusy(false); } };
@@ -10259,7 +10312,7 @@ function StopwatchModal({ sw, onClose: onCloseProp }) {
           ) : running ? (
             <button className="btn btn-primary" disabled={busy} onClick={() => act(sw.actions.pause)}>PAUSAR</button>
           ) : (
-            <button className="btn btn-primary" disabled={busy} onClick={() => act(sw.actions.start)}>{sw.st === "paused" ? "RETOMAR" : "INICIAR"}</button>
+            <button className="btn btn-primary" disabled={busy} onClick={() => { push.enable(); act(sw.actions.start); }}>{sw.st === "paused" ? "RETOMAR" : "INICIAR"}</button>
           )}
           <button className="btn btn-ghost" disabled={busy} onClick={() => act(sw.actions.reset)}>RESET</button>
         </div>
@@ -10270,18 +10323,27 @@ function StopwatchModal({ sw, onClose: onCloseProp }) {
             ))}
           </ul>
         )}
+        <div className="sb-push">
+          {push.status === "on" || push.status === "off" ? null : (
+            <p className="sb-push-note">
+              {push.status === "needs-install" ? "No iPhone: toque em Compartilhar › \"Adicionar à Tela de Início\" e abra o app por lá pra ativar o aviso com o app fechado."
+                : push.status === "denied" ? "Notificações bloqueadas neste aparelho. Libere nas configurações do navegador/app pra ativar o aviso."
+                : "Este aparelho não suporta aviso com o app fechado."}
+            </p>
+          )}
+        </div>
         <button className="link profile-close-link" onClick={onClose}>Fechar</button>
       </div>
     </div>
   );
 }
 
-function StopwatchBanner({ sw, onOpen }) {
+function StopwatchBanner({ sw, push, onOpen }) {
   const secs = Math.ceil(sw.remaining / 1000);
   const t = `${String(Math.floor(secs / 60)).padStart(2, "0")}:${String(secs % 60).padStart(2, "0")}`;
   const live = sw.running || sw.finished;
   return (
-    <button className={`presence-open-banner stopwatch-banner ${live ? "" : "sw-idle"}`} onClick={() => { sw.unlockAudio(); onOpen(); }}>
+    <button className={`presence-open-banner stopwatch-banner ${live ? "" : "sw-idle"}`} onClick={() => { sw.unlockAudio(); push.enable(); onOpen(); }}>
       <span className="pob-in">
         <span className="pob-left">
           {live ? <span className="pob-live"><i className="pob-dot" />AO VIVO</span> : <span className="pob-live">PLACAR ELETRÔNICO</span>}
@@ -12307,6 +12369,11 @@ function Styles() {
       .sb-history b { color: var(--text); font-weight: 600; }
       .sw-by { font-family: 'Inter',sans-serif; font-style: normal; font-weight: 500; font-size: 9.5px; letter-spacing: .5px; color: #6b6b6b; text-transform: lowercase; margin-top: 2px; }
       .stopwatch-banner.sw-idle .pob-live { letter-spacing: 2px; }
+      .sb-push { margin-top: 12px; }
+      .sb-push-btn { width: 100%; background: transparent; color: var(--gold); border: 1px solid var(--gold-dark); padding: 10px 8px; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 13px; letter-spacing: .8px; text-transform: uppercase; cursor: pointer; transform: skewX(-14deg); }
+      .sb-push-btn > * , .sb-push-btn svg { transform: none; }
+      .sb-push-btn.is-on { color: #5fcf80; border-color: #2f7a48; font-size: 11.5px; }
+      .sb-push-note { font-size: 11px; color: var(--text-dim); text-align: center; margin: 0; line-height: 1.4; }
 `}</style>
   );
 }
