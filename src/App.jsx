@@ -145,8 +145,21 @@ const isEscalacaoConcludedBRT = (now = new Date()) => {
     weekday: "short",
   }).formatToParts(now);
   const weekday = parts.find((p) => p.type === "weekday")?.value;
-  return weekday !== "Mon";
+  // "Pelada concluída" só depois da segunda (terça/quarta). Escalação recém
+  // publicada de quinta a domingo é da próxima pelada, não da que passou.
+  return weekday === "Tue" || weekday === "Wed";
 };
+// Última quarta 20h (Brasília) já passada. Escalação publicada depois disso
+// fica visível até a próxima quarta 20h, mesmo de quinta a domingo.
+const lastWednesday8pmBRT = (now = new Date()) => {
+  const OFF = 3 * 3600 * 1000;
+  const b = new Date(now.getTime() - OFF);
+  let d = new Date(Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate(), 20, 0, 0));
+  while (d.getUTCDay() !== 3 || d.getTime() > b.getTime()) d = new Date(d.getTime() - 86400000);
+  return new Date(d.getTime() + OFF);
+};
+const isEscalacaoFreshBRT = (updatedAt, now = new Date()) =>
+  !!updatedAt && new Date(updatedAt) > lastWednesday8pmBRT(now);
 
 // A pelada é a primeira do mês? (segunda-feira com dia 1 a 7). Usa a data
 // agendada da pelada; sem data, a próxima segunda (dia da pelada semanal).
@@ -9682,7 +9695,7 @@ export default function PeladaApp() {
             </button>
           )}
 
-          {escalacaoIsCurrent && isBeforeWednesday8pmBRT() && (
+          {escalacaoIsCurrent && (isBeforeWednesday8pmBRT() || isEscalacaoFreshBRT(publishedList?.updatedAt)) && (
             <EscalacaoBanner
               onOpen={() => setShowEscalacaoModal(true)}
               concluded={isEscalacaoConcludedBRT()}
