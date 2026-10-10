@@ -12124,8 +12124,12 @@ function Styles() {
       /* elenco: mais espaço entre foto e nome */
       .roster-row-main { gap: 20px !important; }
       .roster-row .avatar { margin-right: 4px; }
+      /* ESCALAÇÃO DEFINIDA: fundo dourado, aba bordô, texto preto */
+      .escalacao-banner:not(.escalacao-banner-concluded) { background: linear-gradient(100deg,#f6d374,#c8962a) !important; border-left: 8px solid #8a1430 !important; animation: pg-gold 1.8s ease-in-out infinite !important; }
+      .escalacao-banner:not(.escalacao-banner-concluded) .presence-open-banner-title, .escalacao-banner:not(.escalacao-banner-concluded) .presence-open-banner-cta { color: #000 !important; }
+      .escalacao-banner:not(.escalacao-banner-concluded) .pob-arrow { border-left-color: #000; }
       /* botões LISTA ABERTA / ESCALAÇÃO DEFINIDA +15% */
-      .presence-open-banner { padding: 16px 20px; margin-top: 16px; }
+      .presence-open-banner { padding: 23px 20px; margin-top: 16px; }
       .presence-open-banner .presence-open-banner-title { font-size: 30px; }
       .presence-open-banner .presence-open-banner-cta { font-size: 21px; }
       .escalacao-banner .presence-open-banner-title { font-size: 27.5px; }
