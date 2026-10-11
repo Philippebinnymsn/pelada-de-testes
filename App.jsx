@@ -5826,12 +5826,22 @@ function tvEmbedUrl(raw) {
   return url.toString();
 }
 
+function TvLogo({ c }) {
+  const [bad, setBad] = useState(false);
+  if (c?.logo_url && !bad && /^https:\/\//i.test(c.logo_url)) {
+    return <span className="tv-logo"><img src={c.logo_url} alt="" onError={() => setBad(true)} /></span>;
+  }
+  const ini = String(c?.name || "?").trim().split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  return <span className="tv-logo tv-logo-ini">{ini}</span>;
+}
+
 function TvPage({ onBack, isAdmin }) {
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [current, setCurrent] = useState(null);
   const [name, setName] = useState("");
   const [link, setLink] = useState("");
+  const [logo, setLogo] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [manage, setManage] = useState(false);
@@ -5857,10 +5867,12 @@ function TvPage({ onBack, isAdmin }) {
     if (!name.trim()) { setErr("Dê um nome ao canal."); return; }
     if (!tvEmbedUrl(link)) { setErr("Link inválido. Use um link https (YouTube, Twitch ou o código embed)."); return; }
     setBusy(true);
-    const { error } = await supabase.from("tv_channels").insert({ name: name.trim(), url: link.trim(), position: channels.length });
+    const row = { name: name.trim(), url: link.trim(), position: channels.length };
+    if (logo.trim()) row.logo_url = logo.trim();
+    const { error } = await supabase.from("tv_channels").insert(row);
     setBusy(false);
     if (error) { setErr("Não foi possível salvar: " + (error.message || "erro") + (/tv_channels/.test(error.message || "") ? " — rode a migração da TV no Supabase." : "")); return; }
-    setName(""); setLink(""); load();
+    setName(""); setLink(""); setLogo(""); load();
   };
   const remove = async (id) => {
     if (!window.confirm("Excluir este canal?")) return;
@@ -5868,6 +5880,13 @@ function TvPage({ onBack, isAdmin }) {
     load();
   };
 
+  const setChannelLogo = async (c) => {
+    const v = window.prompt("Link da imagem do logo (https://...). Deixe vazio para remover.", c.logo_url || "");
+    if (v === null) return;
+    const { error } = await supabase.from("tv_channels").update({ logo_url: v.trim() || null }).eq("id", c.id);
+    if (error) setErr("Não foi possível salvar o logo: " + error.message);
+    load();
+  };
   const active = channels.find((c) => c.id === current);
   const src = active ? tvEmbedUrl(active.url) : null;
 
@@ -5893,7 +5912,7 @@ function TvPage({ onBack, isAdmin }) {
             </div>
             <div className="tv-picker">
               <button className={`tv-select ${pickOpen ? "open" : ""}`} onClick={() => setPickOpen((v) => !v)}>
-                <span className="tv-chip-dot" />
+                {active ? <TvLogo c={active} /> : <span className="tv-chip-dot" />}
                 <span className="tv-select-name">{active?.name || "Escolher canal"}</span>
                 <span className="tv-select-caret">▾</span>
               </button>
@@ -5904,7 +5923,7 @@ function TvPage({ onBack, isAdmin }) {
                     {channels.map((c) => (
                       <li key={c.id}>
                         <button className={c.id === current ? "on" : ""} onClick={() => { setCurrent(c.id); setPickOpen(false); }}>
-                          <span className="tv-chip-dot" />{c.name}
+                          <TvLogo c={c} />{c.name}
                         </button>
                       </li>
                     ))}
@@ -5926,12 +5945,15 @@ function TvPage({ onBack, isAdmin }) {
                 <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Quadra principal" />
                 <label className="field-label">Link ao vivo ou código embed</label>
                 <input className="input" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://youtube.com/live/... ou twitch.tv/..." />
+                <label className="field-label">Logo do canal (link da imagem, opcional)</label>
+                <input className="input" value={logo} onChange={(e) => setLogo(e.target.value)} placeholder="https://.../logo.png" />
                 {err && <p className="field-hint tv-err">{err}</p>}
                 <button className="btn btn-primary btn-block" disabled={busy} onClick={add}>{busy ? "Salvando…" : "Adicionar canal"}</button>
                 <ul className="tv-list">
                   {channels.map((c) => (
                     <li key={c.id}>
-                      <span>{c.name}</span>
+                      <TvLogo c={c} /><span className="tv-list-name">{c.name}</span>
+                      <button className="btn btn-ghost" onClick={() => setChannelLogo(c)}>Logo</button>
                       <button className="btn btn-ghost" onClick={() => remove(c.id)}>Excluir</button>
                     </li>
                   ))}
@@ -12855,6 +12877,16 @@ function Styles() {
       .tv-pick-list button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 13px 16px; border: 0; border-top: 1px solid rgba(255,255,255,.07); background: transparent; color: #fff; cursor: pointer; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 16px; letter-spacing: 1px; text-transform: uppercase; text-align: left; }
       .tv-pick-list li:first-child button { border-top: 0; }
       .tv-pick-list button.on { color: var(--gold); background: rgba(240,204,60,.08); }
+
+      .tv-page { width: 100%; box-sizing: border-box; }
+      .tv-page .rules-page-header { width: 100%; box-sizing: border-box; }
+      .tv-page .rules-page-body { width: 100%; box-sizing: border-box; }
+      .tv-logo { flex: none; width: 46px; height: 28px; display: inline-flex; align-items: center; justify-content: center; background: #fff; border-radius: 3px; overflow: hidden; padding: 2px 4px; box-sizing: border-box; }
+      .tv-logo img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+      .tv-logo-ini { background: #000; color: var(--gold); border: 1px solid var(--gold); font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 1px; }
+      .tv-list-name { flex: 1; min-width: 0; }
+      .tv-list li { flex-wrap: nowrap; }
+      .tv-list li .btn { padding: 6px 10px; font-size: 12px; }
 `}</style>
   );
 }
