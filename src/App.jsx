@@ -5835,9 +5835,11 @@ function TvPage({ onBack, isAdmin }) {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [manage, setManage] = useState(false);
+  const [pickOpen, setPickOpen] = useState(false);
 
   const load = async () => {
-    const { data, error } = await supabase.from("tv_channels").select("*").order("position", { ascending: true }).order("created_at", { ascending: true });
+    const { data: raw, error } = await supabase.from("tv_channels").select("*");
+    const data = raw ? [...raw].sort((a, b) => String(a.name).localeCompare(String(b.name), "pt-BR", { numeric: true, sensitivity: "base" })) : raw;
     if (!error && data) {
       setChannels(data);
       setCurrent((c) => (c && data.some((x) => x.id === c) ? c : data[0]?.id ?? null));
@@ -5889,12 +5891,26 @@ function TvPage({ onBack, isAdmin }) {
                 <p className="empty-hint">Link do canal inválido.</p>
               )}
             </div>
-            <div className="tv-channels">
-              {channels.map((c) => (
-                <button key={c.id} className={`tv-chip ${c.id === current ? "on" : ""}`} onClick={() => setCurrent(c.id)}>
-                  <span className="tv-chip-dot" />{c.name}
-                </button>
-              ))}
+            <div className="tv-picker">
+              <button className={`tv-select ${pickOpen ? "open" : ""}`} onClick={() => setPickOpen((v) => !v)}>
+                <span className="tv-chip-dot" />
+                <span className="tv-select-name">{active?.name || "Escolher canal"}</span>
+                <span className="tv-select-caret">▾</span>
+              </button>
+              {pickOpen && (
+                <>
+                  <div className="tv-pick-back" onClick={() => setPickOpen(false)} />
+                  <ul className="tv-pick-list">
+                    {channels.map((c) => (
+                      <li key={c.id}>
+                        <button className={c.id === current ? "on" : ""} onClick={() => { setCurrent(c.id); setPickOpen(false); }}>
+                          <span className="tv-chip-dot" />{c.name}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </div>
           </>
         )}
@@ -12828,6 +12844,17 @@ function Styles() {
       .tv-err { color: #e8656d; }
       .tv-list { list-style: none; margin: 14px 0 0; padding: 0; }
       .tv-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid rgba(255,255,255,.08); }
+
+      .tv-picker { position: relative; margin: 12px 0 18px; }
+      .tv-select { width: 100%; display: flex; align-items: center; gap: 10px; padding: 13px 16px; border: 0; cursor: pointer; background: linear-gradient(100deg, #f0cc3c, #b8861c); color: #1c1d20; clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%); font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 17px; letter-spacing: 1px; text-transform: uppercase; text-align: left; }
+      .tv-select-name { flex: 1; }
+      .tv-select-caret { font-size: 16px; transition: transform .2s; }
+      .tv-select.open .tv-select-caret { transform: rotate(180deg); }
+      .tv-pick-back { position: fixed; inset: 0; z-index: 40; }
+      .tv-pick-list { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 41; margin: 0; padding: 0; list-style: none; max-height: 50vh; overflow-y: auto; background: #1a1b1f; border-left: 6px solid var(--gold); box-shadow: 0 12px 28px rgba(0,0,0,.6); }
+      .tv-pick-list button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 13px 16px; border: 0; border-top: 1px solid rgba(255,255,255,.07); background: transparent; color: #fff; cursor: pointer; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 16px; letter-spacing: 1px; text-transform: uppercase; text-align: left; }
+      .tv-pick-list li:first-child button { border-top: 0; }
+      .tv-pick-list button.on { color: var(--gold); background: rgba(240,204,60,.08); }
 `}</style>
   );
 }
