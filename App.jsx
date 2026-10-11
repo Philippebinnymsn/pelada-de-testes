@@ -5857,7 +5857,7 @@ function TvPage({ onBack, isAdmin }) {
     setBusy(true);
     const { error } = await supabase.from("tv_channels").insert({ name: name.trim(), url: link.trim(), position: channels.length });
     setBusy(false);
-    if (error) { setErr("Não foi possível salvar. Rode a migração da TV no Supabase."); return; }
+    if (error) { setErr("Não foi possível salvar: " + (error.message || "erro") + (/tv_channels/.test(error.message || "") ? " — rode a migração da TV no Supabase." : "")); return; }
     setName(""); setLink(""); load();
   };
   const remove = async (id) => {
