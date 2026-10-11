@@ -5829,7 +5829,7 @@ function tvEmbedUrl(raw) {
 
 // ===== Reconhecimento facial para liberar a TV PELADA 4K =====
 // Roda 100% no aparelho (face-api via CDN). Guardamos só a "impressão facial"
-// (128 números), nunca a foto. Vale por 60 min depois de reconhecido.
+// (128 números), nunca a foto. É pedido toda vez que a TV é aberta.
 const FACE_LIB = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.js";
 const FACE_MODELS = ["https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/", "https://unpkg.com/@vladmandic/face-api@1.7.12/model/"];
 const FACE_MATCH = 0.5;
@@ -5995,7 +5995,8 @@ function TvLogo({ c }) {
 }
 
 function TvPage({ onBack, isAdmin, user, players }) {
-  const [faceOk, setFaceOk] = useState(() => !!user && faceVerified.uid === user.id && Date.now() - faceVerified.at < FACE_VALID_MIN * 60000);
+  // o rosto é pedido TODA vez que a TV é aberta
+  const [faceOk, setFaceOk] = useState(false);
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [current, setCurrent] = useState(null);
@@ -9064,7 +9065,7 @@ export default function PeladaApp() {
     return true;
   })();
 
-  if (showTvPage && authUser) {
+  if (showTvPage && authUser && (myPlayer || isAdmin)) {
     return (
       <div className="pelada-root">
         <Styles />
@@ -9810,7 +9811,7 @@ export default function PeladaApp() {
             <Emo e="📖" /> REGRAS DA PELADA 4K
           </button>
 
-          {authUser && (
+          {authUser && (myPlayer || isAdmin) && (
             <button className="btn btn-ghost btn-block tv-open-btn" onClick={openTvPage}>
               <Emo e="📺" /> TV PELADA 4K
             </button>
