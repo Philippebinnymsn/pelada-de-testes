@@ -5791,6 +5791,144 @@ const RULES_CONTACT =
   "*Qualquer dúvida, sugestão ou demanda, deverá ser feita diretamente aos ADMs, Norman, Felipe Muniz ou Freitas.*";
 const RULES_SIGNATURE = "ADM 2026/27";
 
+
+// ===== TV PELADA 4K: canais de vídeo ao vivo (embed) cadastrados pelos admins =====
+function tvEmbedUrl(raw) {
+  let u = String(raw || "").trim();
+  const m = u.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+  if (m) u = m[1];
+  if (u.startsWith("//")) u = "https:" + u;
+  if (!/^https:\/\//i.test(u)) return null;
+  let url;
+  try { url = new URL(u); } catch { return null; }
+  const host = url.hostname.replace(/^www\./, "").replace(/^m\./, "");
+  if (host === "youtu.be") {
+    const id = url.pathname.split("/")[1];
+    return id ? `https://www.youtube.com/embed/${id}?autoplay=1&playsinline=1&rel=0` : null;
+  }
+  if (host === "youtube.com" || host === "youtube-nocookie.com") {
+    const parts = url.pathname.split("/").filter(Boolean);
+    let id = url.searchParams.get("v");
+    if (!id && ["live", "embed", "shorts"].includes(parts[0]) && parts[1] && parts[1] !== "live_stream") id = parts[1];
+    if (id) return `https://www.youtube.com/embed/${id}?autoplay=1&playsinline=1&rel=0`;
+    const ch = url.searchParams.get("channel") || (parts[0] === "channel" ? parts[1] : null);
+    if (ch) return `https://www.youtube.com/embed/live_stream?channel=${ch}&autoplay=1&playsinline=1`;
+    return null;
+  }
+  if (host === "twitch.tv") {
+    const ch = url.pathname.split("/").filter(Boolean)[0];
+    return ch ? `https://player.twitch.tv/?channel=${ch}&parent=${window.location.hostname}&autoplay=true` : null;
+  }
+  if (host === "player.twitch.tv" && !url.searchParams.get("parent")) {
+    url.searchParams.set("parent", window.location.hostname);
+    return url.toString();
+  }
+  return url.toString();
+}
+
+function TvPage({ onBack, isAdmin }) {
+  const [channels, setChannels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [current, setCurrent] = useState(null);
+  const [name, setName] = useState("");
+  const [link, setLink] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [manage, setManage] = useState(false);
+
+  const load = async () => {
+    const { data, error } = await supabase.from("tv_channels").select("*").order("position", { ascending: true }).order("created_at", { ascending: true });
+    if (!error && data) {
+      setChannels(data);
+      setCurrent((c) => (c && data.some((x) => x.id === c) ? c : data[0]?.id ?? null));
+    }
+    setLoading(false);
+  };
+  useEffect(() => {
+    load();
+    const ch = supabase.channel("tv-channels-rt").on("postgres_changes", { event: "*", schema: "public", table: "tv_channels" }, load).subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+
+  const add = async () => {
+    setErr("");
+    if (!name.trim()) { setErr("Dê um nome ao canal."); return; }
+    if (!tvEmbedUrl(link)) { setErr("Link inválido. Use um link https (YouTube, Twitch ou o código embed)."); return; }
+    setBusy(true);
+    const { error } = await supabase.from("tv_channels").insert({ name: name.trim(), url: link.trim(), position: channels.length });
+    setBusy(false);
+    if (error) { setErr("Não foi possível salvar. Rode a migração da TV no Supabase."); return; }
+    setName(""); setLink(""); load();
+  };
+  const remove = async (id) => {
+    if (!window.confirm("Excluir este canal?")) return;
+    await supabase.from("tv_channels").delete().eq("id", id);
+    load();
+  };
+
+  const active = channels.find((c) => c.id === current);
+  const src = active ? tvEmbedUrl(active.url) : null;
+
+  return (
+    <div className="rules-page tv-page">
+      <div className="rules-page-header">
+        <button className="hero-icon-btn" onClick={onBack} aria-label="Voltar">‹</button>
+        <h1 className="rules-page-title">TV PELADA 4K</h1>
+      </div>
+      <div className="rules-page-body">
+        {loading ? (
+          <p className="empty-hint">Carregando…</p>
+        ) : channels.length === 0 ? (
+          <p className="empty-hint">Nenhum canal ao vivo cadastrado ainda.</p>
+        ) : (
+          <>
+            <div className="tv-player">
+              {src ? (
+                <iframe key={active.id} src={src} title={active.name} allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />
+              ) : (
+                <p className="empty-hint">Link do canal inválido.</p>
+              )}
+            </div>
+            <div className="tv-channels">
+              {channels.map((c) => (
+                <button key={c.id} className={`tv-chip ${c.id === current ? "on" : ""}`} onClick={() => setCurrent(c.id)}>
+                  <span className="tv-chip-dot" />{c.name}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {isAdmin && (
+          <div className="tv-admin">
+            <button className="btn btn-ghost btn-block" onClick={() => setManage((v) => !v)}>
+              <Emo e="⚙" /> {manage ? "Fechar gerenciar canais" : "Gerenciar canais"}
+            </button>
+            {manage && (
+              <div className="tv-admin-box">
+                <label className="field-label">Nome do canal</label>
+                <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Quadra principal" />
+                <label className="field-label">Link ao vivo ou código embed</label>
+                <input className="input" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://youtube.com/live/... ou twitch.tv/..." />
+                {err && <p className="field-hint tv-err">{err}</p>}
+                <button className="btn btn-primary btn-block" disabled={busy} onClick={add}>{busy ? "Salvando…" : "Adicionar canal"}</button>
+                <ul className="tv-list">
+                  {channels.map((c) => (
+                    <li key={c.id}>
+                      <span>{c.name}</span>
+                      <button className="btn btn-ghost" onClick={() => remove(c.id)}>Excluir</button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Página própria das regras (não é pop-up) — some o resto do app e mostra só
 // isso, com um botão de voltar, igual qualquer outra tela do site.
 function RulesPage({ onBack }) {
@@ -5927,6 +6065,17 @@ export default function PeladaApp() {
   const closeRulesPage = () => {
     if (window.location.hash === "#regras") fxClose(() => { window.location.hash = ""; });
   };
+
+  const [showTvPage, setShowTvPage] = useState(
+    () => typeof window !== "undefined" && window.location.hash === "#tv"
+  );
+  useEffect(() => {
+    const onHashChange = () => { const o = window.location.hash === "#tv"; setShowTvPage(o); if (o) window.scrollTo(0, 0); };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+  const openTvPage = () => { window.location.hash = "tv"; };
+  const closeTvPage = () => { if (window.location.hash === "#tv") fxClose(() => { window.location.hash = ""; }); };
 
   // Lista de presença: também é página própria (mesmo esquema de hash da
   // página de regras), não mais uma seção que abre dentro da home.
@@ -8705,6 +8854,15 @@ export default function PeladaApp() {
     return true;
   })();
 
+  if (showTvPage && authUser) {
+    return (
+      <div className="pelada-root">
+        <Styles />
+        <TvPage onBack={closeTvPage} isAdmin={isAdmin} />
+      </div>
+    );
+  }
+
   if (showRulesPage) {
     return (
       <div className="pelada-root">
@@ -9441,6 +9599,12 @@ export default function PeladaApp() {
           <button className="btn btn-ghost btn-block" onClick={openRulesPage}>
             <Emo e="📖" /> REGRAS DA PELADA 4K
           </button>
+
+          {authUser && (
+            <button className="btn btn-ghost btn-block tv-open-btn" onClick={openTvPage}>
+              <Emo e="📺" /> TV PELADA 4K
+            </button>
+          )}
 
           {isAdmin && (
             <button className="btn btn-ghost btn-block" onClick={() => setFormPlayer(null)}>
@@ -12649,6 +12813,21 @@ function Styles() {
       .stopwatch-banner .presence-open-banner-cta { color: #ffe58a !important; }
       .stopwatch-banner .pob-live { color: #f0cc3c; background: none !important; -webkit-text-fill-color: #f0cc3c; }
       .stopwatch-banner .sw-by { color: rgba(255,255,255,.6); }
+
+      /* TV PELADA 4K */
+      .tv-player { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-left: 6px solid var(--gold); overflow: hidden; }
+      .tv-player::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; z-index: 2; pointer-events: none; background: repeating-linear-gradient(135deg, #000 0 8px, var(--gold) 8px 16px); }
+      .tv-player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+      .tv-channels { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 18px; }
+      .tv-chip { display: inline-flex; align-items: center; gap: 7px; padding: 9px 16px; border: 0; cursor: pointer; transform: skewX(-14deg); background: #25272b; color: #fff; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 15px; letter-spacing: 1px; text-transform: uppercase; }
+      .tv-chip.on { background: linear-gradient(100deg, #f0cc3c, #b8861c); color: #1c1d20; }
+      .tv-chip-dot { width: 7px; height: 7px; border-radius: 50%; background: #e0243f; box-shadow: 0 0 6px #ff3b5c; }
+      .tv-admin { margin-top: 20px; }
+      .tv-admin-box { margin-top: 12px; padding: 14px; background: #1a1b1f; border-left: 6px solid var(--gold); }
+      .tv-admin-box .btn-primary { margin-top: 12px; }
+      .tv-err { color: #e8656d; }
+      .tv-list { list-style: none; margin: 14px 0 0; padding: 0; }
+      .tv-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid rgba(255,255,255,.08); }
 `}</style>
   );
 }
