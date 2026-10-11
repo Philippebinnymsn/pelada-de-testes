@@ -5826,6 +5826,165 @@ function tvEmbedUrl(raw) {
   return url.toString();
 }
 
+
+// ===== Reconhecimento facial para liberar a TV PELADA 4K =====
+// Roda 100% no aparelho (face-api via CDN). Guardamos só a "impressão facial"
+// (128 números), nunca a foto. Vale por 60 min depois de reconhecido.
+const FACE_LIB = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.js";
+const FACE_MODELS = ["https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/", "https://unpkg.com/@vladmandic/face-api@1.7.12/model/"];
+const FACE_MATCH = 0.5;
+const FACE_VALID_MIN = 60;
+const faceVerified = { uid: null, at: 0 };
+let facePromise = null;
+function loadFaceApi() {
+  if (facePromise) return facePromise;
+  facePromise = new Promise((resolve, reject) => {
+    const boot = async () => {
+      const fa = window.faceapi;
+      let lastErr = null;
+      for (const base of FACE_MODELS) {
+        try {
+          await Promise.all([
+            fa.nets.tinyFaceDetector.loadFromUri(base),
+            fa.nets.faceLandmark68TinyNet.loadFromUri(base),
+            fa.nets.faceRecognitionNet.loadFromUri(base),
+          ]);
+          return resolve(fa);
+        } catch (e) { lastErr = e; }
+      }
+      reject(lastErr || new Error("modelos"));
+    };
+    if (window.faceapi) { boot(); return; }
+    const sc = document.createElement("script");
+    sc.src = FACE_LIB;
+    sc.onload = boot;
+    sc.onerror = () => reject(new Error("Não foi possível carregar o reconhecimento facial."));
+    document.head.appendChild(sc);
+  }).catch((e) => { facePromise = null; throw e; });
+  return facePromise;
+}
+const faceDist = (a, b) => Math.sqrt(a.reduce((s, v, i) => s + (v - b[i]) * (v - b[i]), 0));
+
+function FaceGate({ user, onOk }) {
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const [phase, setPhase] = useState("loading"); // loading | consent | scanning | error
+  const [mode, setMode] = useState(null); // enroll | verify
+  const [msg, setMsg] = useState("Carregando…");
+  const [consent, setConsent] = useState(false);
+  const [err, setErr] = useState("");
+  const [turn, setTurn] = useState(false);
+  const tpl = useRef(null);
+  const runId = useRef(0);
+
+  const stopCam = () => { try { streamRef.current?.getTracks().forEach((t) => t.stop()); } catch {} streamRef.current = null; };
+  useEffect(() => () => { runId.current++; stopCam(); }, []);
+
+  const init = async () => {
+    setPhase("loading"); setMsg("Verificando seu cadastro facial…"); setErr("");
+    const { data, error } = await supabase.from("face_templates").select("descriptors").eq("user_id", user.id).maybeSingle();
+    if (error) { setErr("Não foi possível consultar o cadastro facial: " + error.message + " — rode a migração do rosto no Supabase."); setPhase("error"); return; }
+    if (data && Array.isArray(data.descriptors) && data.descriptors.length) { tpl.current = data.descriptors; setMode("verify"); setPhase("scanning"); start("verify"); }
+    else { setMode("enroll"); setPhase("consent"); }
+  };
+  useEffect(() => { init(); }, []);
+
+  const start = async (m) => {
+    const id = ++runId.current;
+    setErr(""); setTurn(false);
+    try {
+      setMsg("Carregando reconhecimento facial…");
+      const fa = await loadFaceApi();
+      if (id !== runId.current) return;
+      setMsg("Abrindo a câmera…");
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+      if (id !== runId.current) { stream.getTracks().forEach((t) => t.stop()); return; }
+      streamRef.current = stream;
+      const v = videoRef.current;
+      v.srcObject = stream; v.muted = true; v.setAttribute("playsinline", "true");
+      await v.play();
+      const opts = new fa.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
+      const t0 = Date.now();
+      const caught = [];
+      let matched = false;
+      let lastCap = 0;
+      setMsg(m === "enroll" ? "Olhe para a câmera, de frente" : "Olhe para a câmera");
+      while (id === runId.current) {
+        if (Date.now() - t0 > 60000) { setErr("Não foi possível concluir. Procure um lugar com boa luz e tente de novo."); setPhase("error"); stopCam(); return; }
+        const all = await fa.detectAllFaces(v, opts).withFaceLandmarks(true).withFaceDescriptors();
+        if (id !== runId.current) return;
+        if (all.length > 1) { setMsg("Apareça sozinho na câmera"); await new Promise((r) => setTimeout(r, 300)); continue; }
+        if (all.length === 0) { setMsg("Não encontrei seu rosto — chegue mais perto"); await new Promise((r) => setTimeout(r, 300)); continue; }
+        const f = all[0];
+        const pts = f.landmarks.positions;
+        const yaw = (pts[30].x - pts[0].x) / Math.max(1, pts[16].x - pts[30].x); // ~1 de frente
+        const frontal = yaw > 0.75 && yaw < 1.33;
+        if (m === "enroll") {
+          if (!frontal) { setMsg("Olhe de frente para a câmera"); }
+          else if (Date.now() - lastCap > 700) {
+            lastCap = Date.now();
+            caught.push(Array.from(f.descriptor));
+            setMsg(`Capturando… ${caught.length}/4`);
+            if (caught.length >= 4) {
+              const { error } = await supabase.from("face_templates").insert({ user_id: user.id, descriptors: caught, consent_at: new Date().toISOString() });
+              stopCam();
+              if (error) { setErr("Não foi possível salvar o cadastro: " + error.message); setPhase("error"); return; }
+              faceVerified.uid = user.id; faceVerified.at = Date.now();
+              onOk();
+              return;
+            }
+          }
+        } else if (!matched) {
+          if (!frontal) setMsg("Olhe de frente para a câmera");
+          else {
+            const d = Math.min(...tpl.current.map((t) => faceDist(t, f.descriptor)));
+            if (d < FACE_MATCH) { matched = true; setTurn(true); setMsg("Quase lá! Vire a cabeça devagar para um dos lados"); }
+            else setMsg("Rosto não reconhecido");
+          }
+        } else {
+          // desafio de "pessoa viva": virar o rosto para um dos lados
+          if (yaw < 0.6 || yaw > 1.65) {
+            stopCam(); faceVerified.uid = user.id; faceVerified.at = Date.now(); onOk(); return;
+          }
+        }
+        await new Promise((r) => setTimeout(r, 180));
+      }
+    } catch (e) {
+      stopCam();
+      const name = e && e.name;
+      setErr(name === "NotAllowedError" ? "Permita o uso da câmera para continuar (nas configurações do navegador)." : name === "NotFoundError" ? "Nenhuma câmera encontrada neste aparelho." : (e && e.message) || "Erro ao abrir a câmera.");
+      setPhase("error");
+    }
+  };
+
+  return (
+    <div className="face-gate">
+      <h2 className="face-title">{mode === "enroll" ? "Cadastrar meu rosto" : "Reconhecimento facial"}</h2>
+      {phase === "loading" && <p className="empty-hint">{msg}</p>}
+      {phase === "consent" && (
+        <div className="face-consent">
+          <p className="field-hint">Para liberar a TV PELADA 4K e evitar o compartilhamento de login, precisamos reconhecer o seu rosto.</p>
+          <p className="field-hint">Não guardamos a sua foto: salvamos apenas um código numérico (impressão facial), usado só para liberar a TV. Um admin pode apagar esse cadastro quando você pedir.</p>
+          <label className="face-check"><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} /> Autorizo o uso do meu rosto para essa finalidade.</label>
+          <button className="btn btn-primary btn-block" disabled={!consent} onClick={() => { setPhase("scanning"); start("enroll"); }}>Cadastrar meu rosto</button>
+        </div>
+      )}
+      {phase === "scanning" && (
+        <div className="face-cam">
+          <div className={`face-frame ${turn ? "turn" : ""}`}><video ref={videoRef} playsInline muted /></div>
+          <p className="face-msg">{msg}</p>
+        </div>
+      )}
+      {phase === "error" && (
+        <div className="face-cam">
+          <p className="field-hint tv-err">{err}</p>
+          <button className="btn btn-primary btn-block" onClick={() => { stopCam(); if (mode === "enroll") { setPhase("consent"); } else init(); }}>Tentar de novo</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TvLogo({ c }) {
   const [bad, setBad] = useState(false);
   if (c?.logo_url && !bad && /^https:\/\//i.test(c.logo_url)) {
@@ -5835,7 +5994,8 @@ function TvLogo({ c }) {
   return <span className="tv-logo tv-logo-ini">{ini}</span>;
 }
 
-function TvPage({ onBack, isAdmin }) {
+function TvPage({ onBack, isAdmin, user, players }) {
+  const [faceOk, setFaceOk] = useState(() => !!user && faceVerified.uid === user.id && Date.now() - faceVerified.at < FACE_VALID_MIN * 60000);
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [current, setCurrent] = useState(null);
@@ -5897,7 +6057,9 @@ function TvPage({ onBack, isAdmin }) {
         <h1 className="rules-page-title">TV PELADA 4K</h1>
       </div>
       <div className="rules-page-body">
-        {loading ? (
+        {!faceOk ? (
+          <FaceGate user={user} onOk={() => setFaceOk(true)} />
+        ) : loading ? (
           <p className="empty-hint">Carregando…</p>
         ) : channels.length === 0 ? (
           <p className="empty-hint">Nenhum canal ao vivo cadastrado ainda.</p>
@@ -5949,6 +6111,16 @@ function TvPage({ onBack, isAdmin }) {
                 <input className="input" value={logo} onChange={(e) => setLogo(e.target.value)} placeholder="https://.../logo.png" />
                 {err && <p className="field-hint tv-err">{err}</p>}
                 <button className="btn btn-primary btn-block" disabled={busy} onClick={add}>{busy ? "Salvando…" : "Adicionar canal"}</button>
+                <label className="field-label" style={{ marginTop: 16 }}>Cadastro facial dos membros</label>
+                <ul className="tv-list">
+                  {(players || []).filter((p) => p.userId).map((p) => (
+                    <li key={"f" + p.id}>
+                      <span className="tv-list-name">{displayName(p)}</span>
+                      <button className="btn btn-ghost" onClick={async () => { if (!window.confirm("Apagar o rosto cadastrado de " + displayName(p) + "?")) return; const { error } = await supabase.from("face_templates").delete().eq("user_id", p.userId); setErr(error ? "Erro: " + error.message : ""); if (!error) window.alert("Cadastro facial apagado. No próximo acesso à TV ele cadastra de novo."); }}>Resetar rosto</button>
+                    </li>
+                  ))}
+                </ul>
+                <label className="field-label" style={{ marginTop: 16 }}>Canais</label>
                 <ul className="tv-list">
                   {channels.map((c) => (
                     <li key={c.id}>
@@ -8896,7 +9068,7 @@ export default function PeladaApp() {
     return (
       <div className="pelada-root">
         <Styles />
-        <TvPage onBack={closeTvPage} isAdmin={isAdmin} />
+        <TvPage onBack={closeTvPage} isAdmin={isAdmin} user={authUser} players={players} />
       </div>
     );
   }
@@ -12887,6 +13059,16 @@ function Styles() {
       .tv-list-name { flex: 1; min-width: 0; }
       .tv-list li { flex-wrap: nowrap; }
       .tv-list li .btn { padding: 6px 10px; font-size: 12px; }
+
+      .face-gate { padding: 6px 0 24px; }
+      .face-title { font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 22px; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); margin: 0 0 12px; }
+      .face-check { display: flex; gap: 10px; align-items: flex-start; margin: 14px 0; font-size: 14px; color: var(--text); }
+      .face-check input { margin-top: 3px; }
+      .face-frame { position: relative; width: 100%; max-width: 360px; aspect-ratio: 3 / 4; margin: 0 auto; overflow: hidden; background: #000; border-left: 6px solid var(--gold); clip-path: polygon(24px 0, 100% 0, 100% calc(100% - 24px), calc(100% - 24px) 100%, 0 100%, 0 24px); }
+      .face-frame video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+      .face-frame::after { content: ""; position: absolute; inset: 14% 18%; border: 2px dashed rgba(240,204,60,.75); border-radius: 50%; pointer-events: none; }
+      .face-frame.turn::after { border-color: #5fe08a; border-style: solid; }
+      .face-msg { text-align: center; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 18px; letter-spacing: .5px; color: #fff; margin: 12px 0 0; }
 `}</style>
   );
 }
