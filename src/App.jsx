@@ -5901,8 +5901,12 @@ function FaceGate({ user, onOk }) {
       if (id !== runId.current) { stream.getTracks().forEach((t) => t.stop()); return; }
       streamRef.current = stream;
       const v = videoRef.current;
-      v.srcObject = stream; v.muted = true; v.setAttribute("playsinline", "true");
-      await v.play();
+      v.srcObject = stream; v.muted = true; v.setAttribute("playsinline", "true"); v.setAttribute("webkit-playsinline", "true");
+      try { v.play()?.catch?.(() => {}); } catch {}
+      // espera o vídeo ter imagem de verdade (no iPhone o play() pode não resolver)
+      for (let i = 0; i < 100 && id === runId.current && !(v.videoWidth > 0 && v.readyState >= 2); i++) await new Promise((r) => setTimeout(r, 100));
+      if (id !== runId.current) return;
+      if (!(v.videoWidth > 0)) throw new Error("A câmera abriu, mas não enviou imagem. Feche outros apps que usam a câmera e tente de novo.");
       const opts = new fa.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
       const t0 = Date.now();
       const caught = [];
@@ -13065,8 +13069,8 @@ function Styles() {
       .face-title { font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 22px; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); margin: 0 0 12px; }
       .face-check { display: flex; gap: 10px; align-items: flex-start; margin: 14px 0; font-size: 14px; color: var(--text); }
       .face-check input { margin-top: 3px; }
-      .face-frame { position: relative; width: 100%; max-width: 360px; aspect-ratio: 3 / 4; margin: 0 auto; overflow: hidden; background: #000; border-left: 6px solid var(--gold); clip-path: polygon(24px 0, 100% 0, 100% calc(100% - 24px), calc(100% - 24px) 100%, 0 100%, 0 24px); }
-      .face-frame video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+      .face-frame { position: relative; width: 100%; max-width: 360px; height: 0; padding-bottom: min(133%, 480px); margin: 0 auto; overflow: hidden; background: #000; border-left: 6px solid var(--gold); }
+      .face-frame video { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; object-fit: cover; transform: scaleX(-1); background: #000; }
       .face-frame::after { content: ""; position: absolute; inset: 14% 18%; border: 2px dashed rgba(240,204,60,.75); border-radius: 50%; pointer-events: none; }
       .face-frame.turn::after { border-color: #5fe08a; border-style: solid; }
       .face-msg { text-align: center; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 18px; letter-spacing: .5px; color: #fff; margin: 12px 0 0; }
