@@ -6011,6 +6011,22 @@ function TvPage({ onBack, isAdmin, user, players }) {
   const [busy, setBusy] = useState(false);
   const [manage, setManage] = useState(false);
   const [pickOpen, setPickOpen] = useState(false);
+  const [viewers, setViewers] = useState([]);
+  const me = (players || []).find((p) => p.userId === user?.id) || null;
+  // quem está assistindo agora (Realtime Presence) — só entra na lista quem passou pelo rosto
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase.channel("tv-presence", { config: { presence: { key: user.id } } });
+    ch.on("presence", { event: "sync" }, () => {
+      const st = ch.presenceState();
+      setViewers(Object.entries(st).map(([uid, arr]) => ({ uid, ...(arr[0] || {}) })).filter((v) => v.watching));
+    }).subscribe(async (status) => {
+      if (status === "SUBSCRIBED" && faceOk) {
+        try { await ch.track({ watching: true, pid: me?.id || null, name: me ? displayName(me) : "Admin", at: Date.now() }); } catch {}
+      }
+    });
+    return () => { try { supabase.removeChannel(ch); } catch {} };
+  }, [user?.id, faceOk]);
 
   const load = async () => {
     const { data: raw, error } = await supabase.from("tv_channels").select("*");
@@ -6062,6 +6078,21 @@ function TvPage({ onBack, isAdmin, user, players }) {
         <h1 className="rules-page-title">TV PELADA 4K</h1>
       </div>
       <div className="rules-page-body">
+        {viewers.length > 0 && (
+          <div className="tv-online">
+            <span className="tv-online-label"><i className="tv-online-dot" />ASSISTINDO AGORA · {viewers.length}</span>
+            <div className="tv-online-avatars">
+              {viewers.map((v) => {
+                const pl = (players || []).find((p) => p.id === v.pid);
+                return (
+                  <span key={v.uid} className="tv-online-av" title={v.name}>
+                    {pl ? <Avatar player={pl} shape="round" size={34} /> : <span className="tv-logo tv-logo-ini" style={{ width: 34, height: 34, borderRadius: "50%" }}>{String(v.name || "?").slice(0, 1).toUpperCase()}</span>}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {!faceOk ? (
           <FaceGate user={user} onOk={() => setFaceOk(true)} />
         ) : loading ? (
@@ -13074,6 +13105,13 @@ function Styles() {
       .face-frame::after { content: ""; position: absolute; inset: 14% 18%; border: 2px dashed rgba(240,204,60,.75); border-radius: 50%; pointer-events: none; }
       .face-frame.turn::after { border-color: #5fe08a; border-style: solid; }
       .face-msg { text-align: center; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 18px; letter-spacing: .5px; color: #fff; margin: 12px 0 0; }
+
+      .tv-online { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 14px; padding: 10px 14px; background: #1a1b1f; border-left: 6px solid var(--gold); }
+      .tv-online-label { display: inline-flex; align-items: center; gap: 8px; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 1.5px; color: var(--gold); white-space: nowrap; }
+      .tv-online-dot { width: 8px; height: 8px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 8px #3ddc84; animation: pg-dot 1.1s ease-in-out infinite; }
+      .tv-online-avatars { display: flex; flex-wrap: wrap; justify-content: flex-end; }
+      .tv-online-av { margin-left: -8px; border-radius: 50%; box-shadow: 0 0 0 2px #1a1b1f; display: inline-flex; }
+      .tv-online-av:first-child { margin-left: 0; }
 `}</style>
   );
 }
