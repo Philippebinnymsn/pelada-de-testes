@@ -6086,7 +6086,8 @@ function TvPage({ onBack, isAdmin, user, players }) {
                 const pl = (players || []).find((p) => p.id === v.pid);
                 return (
                   <span key={v.uid} className="tv-online-av" title={v.name}>
-                    {pl ? <Avatar player={pl} shape="round" size={34} /> : <span className="tv-logo tv-logo-ini" style={{ width: 34, height: 34, borderRadius: "50%" }}>{String(v.name || "?").slice(0, 1).toUpperCase()}</span>}
+                    {pl ? <Avatar player={pl} shape="round" size={30} /> : <span className="tv-logo tv-logo-ini" style={{ width: 30, height: 30, borderRadius: "50%" }}>{String(v.name || "?").slice(0, 1).toUpperCase()}</span>}
+                    <span className="tv-online-name">{pl ? displayName(pl) : v.name}</span>
                   </span>
                 );
               })}
@@ -13106,12 +13107,12 @@ function Styles() {
       .face-frame.turn::after { border-color: #5fe08a; border-style: solid; }
       .face-msg { text-align: center; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 18px; letter-spacing: .5px; color: #fff; margin: 12px 0 0; }
 
-      .tv-online { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 14px; padding: 10px 14px; background: #1a1b1f; border-left: 6px solid var(--gold); }
+      .tv-online { display: flex; flex-direction: column; gap: 8px; margin: 0 0 14px; padding: 10px 14px; background: #1a1b1f; border-left: 6px solid var(--gold); }
       .tv-online-label { display: inline-flex; align-items: center; gap: 8px; font-family: 'Barlow Condensed',sans-serif; font-style: italic; font-weight: 800; font-size: 14px; letter-spacing: 1.5px; color: var(--gold); white-space: nowrap; }
       .tv-online-dot { width: 8px; height: 8px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 8px #3ddc84; animation: pg-dot 1.1s ease-in-out infinite; }
-      .tv-online-avatars { display: flex; flex-wrap: wrap; justify-content: flex-end; }
-      .tv-online-av { margin-left: -8px; border-radius: 50%; box-shadow: 0 0 0 2px #1a1b1f; display: inline-flex; }
-      .tv-online-av:first-child { margin-left: 0; }
+      .tv-online-avatars { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+      .tv-online-av { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; }
+      .tv-online-name { font-family: 'Inter',sans-serif; font-size: 10px; font-weight: 500; letter-spacing: .3px; color: rgba(255,255,255,.55); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
 `}</style>
   );
 }
